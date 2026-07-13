@@ -1,25 +1,42 @@
-import Link from 'next/link'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+'use client'
 
-export default function HomePage() {
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
+
+import { Progress } from '@/components/ui/progress'
+
+export default function SplashPage() {
+ const router = useRouter()
+ const [progress, setProgress] = useState(0)
+
+ useEffect(() => {
+  const duration = 2500
+  const interval = 25
+  const step = 100 / (duration / interval)
+
+  const timer = setInterval(() => {
+   setProgress((prev) => {
+    const next = Math.min(prev + step, 100)
+
+    if (next >= 100) {
+     clearInterval(timer)
+     router.replace('/onboarding')
+    }
+
+    return next
+   })
+  }, interval)
+
+  return () => clearInterval(timer)
+ }, [router])
+
  return (
-  <main className='flex min-h-screen items-center justify-center p-6'>
-   <Card className='w-full max-w-sm'>
-    <CardHeader>
-     <CardTitle className='text-center'>Camera Demo</CardTitle>
-    </CardHeader>
-
-    <CardContent className='flex flex-col gap-4'>
-     <Button size='lg'>
-      <Link href='/camera'>📷 Camera</Link>
-     </Button>
-
-     <Button size='lg' variant='secondary'>
-      <Link href='/qr'>🔳 QR Scanner</Link>
-     </Button>
-    </CardContent>
-   </Card>
-  </main>
+  <div className='relative flex h-screen w-full flex-col items-center justify-center bg-[#1D140F] px-8 md:h-[860px] md:max-w-[430px] md:rounded-[36px] md:shadow-xl'>
+   <div className='text-center space-y-6'>
+    <h1 className='text-5xl font-serif text-white'>AI Bro</h1>
+    <p className='text-sm text-[#D6CFC8]'>Ваш персональный гид по меню</p>
+    <Progress value={progress} className='h-1 bg-[#C8713A]' />
+   </div>
+  </div>
  )
 }
