@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { Camera, X } from 'lucide-react'
+import { Camera, Loader2, X } from 'lucide-react'
 import Tesseract from 'tesseract.js'
 
 import { Button } from '@/components/ui/button'
@@ -17,6 +17,7 @@ export default function MenuScanner({ onSuccess, onError, onClose }: Props) {
  const streamRef = useRef<MediaStream | null>(null)
 
  const [loading, setLoading] = useState(false)
+ const [cameraReady, setCameraReady] = useState(false)
 
  useEffect(() => {
   void startCamera()
@@ -33,30 +34,38 @@ export default function MenuScanner({ onSuccess, onError, onClose }: Props) {
      facingMode: {
       ideal: 'environment',
      },
+     width: {
+      ideal: 1920,
+     },
+     height: {
+      ideal: 1080,
+     },
     },
     audio: false,
    })
 
    streamRef.current = stream
 
-   if (!videoRef.current) return
+   const video = videoRef.current
 
-   videoRef.current.srcObject = stream
+   if (!video) return
+
+   video.srcObject = stream
 
    await new Promise<void>((resolve) => {
-    if (!videoRef.current) {
-     resolve()
-     return
-    }
+    video.onloadedmetadata = async () => {
+     await video.play()
 
-    videoRef.current.onloadedmetadata = () => {
-     videoRef.current?.play()
+     console.log('Camera resolution:', video.videoWidth, 'x', video.videoHeight)
+
+     setCameraReady(true)
+
      resolve()
     }
    })
-  } catch (error) {
-   console.error(error)
-   onError('Cannot access camera.')
+  } catch (e) {
+   console.error(e)
+   onError('Unable to access camera.')
   }
  }
 
@@ -68,57 +77,84 @@ export default function MenuScanner({ onSuccess, onError, onClose }: Props) {
   if (videoRef.current) {
    videoRef.current.srcObject = null
   }
+
+  setCameraReady(false)
  }
 
  async function capture() {
-  if (!videoRef.current) return
+  if (!videoRef.current || !streamRef.current) return
 
   setLoading(true)
 
   try {
-   const video = videoRef.current
+   // allow autofocus
+   await new Promise((resolve) => setTimeout(resolve, 800))
 
-   const canvas = document.createElement('canvas')
+   let blob: Blob
 
-   canvas.width = video.videoWidth
-   canvas.height = video.videoHeight
+   const track = streamRef.current.getVideoTracks()[0]
 
-   const ctx = canvas.getContext('2d')
+   if (track && typeof window !== 'undefined' && 'ImageCapture' in window) {
+    try {
+     const imageCapture = new (window as any).ImageCapture(track)
 
-   if (!ctx) {
-    throw new Error('Canvas not supported.')
+     blob = await imageCapture.takePhoto()
+
+     console.log('Captured using ImageCapture')
+    } catch {
+     blob = await captureFromCanvas()
+    }
+   } else {
+    blob = await captureFromCanvas()
    }
 
-   ctx.drawImage(video, 0, 0)
-
-   const blob = await new Promise<Blob>((resolve, reject) => {
-    canvas.toBlob(
-     (blob) => {
-      if (blob) {
-       resolve(blob)
-      } else {
-       reject(new Error('Failed to capture image.'))
-      }
-     },
-     'image/jpeg',
-     0.95,
-    )
-   })
+   console.log('Blob size:', blob.size)
 
    const {
     data: { text },
-   } = await Tesseract.recognize(blob, 'rus+eng')
+   } = await Tesseract.recognize(blob, 'eng+rus')
 
    stopCamera()
 
    onSuccess(text.trim())
-  } catch (error) {
-   console.error(error)
+  } catch (e) {
+   console.error(e)
 
    onError('Unable to recognize text.')
   } finally {
    setLoading(false)
   }
+ }
+
+ async function captureFromCanvas(): Promise<Blob> {
+  const video = videoRef.current!
+
+  const canvas = document.createElement('canvas')
+
+  canvas.width = video.videoWidth
+  canvas.height = video.videoHeight
+
+  const ctx = canvas.getContext('2d')
+
+  if (!ctx) {
+   throw new Error('Canvas is unavailable.')
+  }
+
+  ctx.drawImage(video, 0, 0, video.videoWidth, video.videoHeight)
+
+  return new Promise<Blob>((resolve, reject) => {
+   canvas.toBlob(
+    (blob) => {
+     if (blob) {
+      resolve(blob)
+     } else {
+      reject(new Error('Failed to capture image.'))
+     }
+    },
+    'image/jpeg',
+    1,
+   )
+  })
  }
 
  return (
@@ -130,6 +166,14 @@ export default function MenuScanner({ onSuccess, onError, onClose }: Props) {
     muted
     className='h-full w-full object-cover'
    />
+
+   {!cameraReady && (
+    <div className='absolute inset-0 z-50 flex flex-col items-center justify-center bg-black'>
+     <Loader2 className='h-10 w-10 animate-spin text-white' />
+
+     <p className='mt-4 text-sm text-white'>Opening camera...</p>
+    </div>
+   )}
 
    <Button
     size='icon'
@@ -144,16 +188,16 @@ export default function MenuScanner({ onSuccess, onError, onClose }: Props) {
    </Button>
 
    <div className='pointer-events-none absolute inset-0 flex items-center justify-center'>
-    <div className='h-72 w-72 rounded-3xl border-2 border-dashed border-white/80' />
+    <div className='h-72 w-72 rounded-3xl border-2 border-dashed border-white' />
    </div>
 
    <Button
-    disabled={loading}
+    disabled={!cameraReady || loading}
     onClick={capture}
     className='absolute bottom-8 left-1/2 h-16 w-16 -translate-x-1/2 rounded-full'
    >
     {loading ? (
-     <span className='text-sm'>...</span>
+     <Loader2 className='h-6 w-6 animate-spin' />
     ) : (
      <Camera className='h-6 w-6' />
     )}
