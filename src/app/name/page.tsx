@@ -23,7 +23,7 @@ export default function NamePage() {
  }
 
  return (
-  <div className='flex h-screen w-full flex-col bg-[#F5F3EE] px-6 py-10 md:h-[860px] md:max-w-[430px] md:rounded-[36px] md:shadow-xl'>
+  <div className='flex h-full w-full flex-col bg-[#F5F3EE] px-6 py-10 md:h-215 md:max-w-107.5 md:rounded-[36px] md:shadow-xl'>
    <div className='mt-12 space-y-3'>
     <h1 className='text-4xl font-semibold text-[#1C1409]'>Как вас зовут?</h1>
 

@@ -29,7 +29,7 @@ export default function QRScannerPage() {
     highlightScanRegion: true,
     highlightCodeOutline: true,
     preferredCamera: 'environment',
-   }
+   },
   )
 
   scannerRef.current = scanner
