@@ -4,6 +4,9 @@ import { useMemo, useState } from 'react'
 import { Camera } from 'lucide-react'
 
 import QRScanner from '@/components/ui/qr-scanner'
+import MenuScanner from '@/components/ui/menu-scanner'
+import ScannerMode from '@/components/ui/scanner-mode'
+
 import { useAppStore } from '@/store/use-app-store'
 
 import { Button } from '@/components/ui/button'
@@ -16,8 +19,12 @@ import {
  DialogTitle,
 } from '@/components/ui/dialog'
 
+type ScanMode = 'qr' | 'menu'
+
 export default function ScanPage() {
  const { name } = useAppStore()
+
+ const [mode, setMode] = useState<ScanMode>('qr')
 
  const [isScanning, setIsScanning] = useState(false)
 
@@ -37,46 +44,41 @@ export default function ScanPage() {
   return 'Добрый вечер'
  }, [])
 
- const openSuccess = (value: string) => {
+ const showDialog = (title: string, description: string) => {
   setIsScanning(false)
 
   setDialog({
-   title: 'QR Code',
-   description: value,
+   title,
+   description,
   })
 
   setDialogOpen(true)
- }
-
- const openError = (message: string) => {
-  setIsScanning(false)
-
-  setDialog({
-   title: 'Camera Error',
-   description: message,
-  })
-
-  setDialogOpen(true)
- }
-
- const closeDialog = () => {
-  setDialogOpen(false)
  }
 
  return (
   <>
-   <div className='relative h-full py-3 w-full  bg-[#F6F3EE]'>
+   <div className='relative h-full w-full bg-[#F6F3EE] py-3'>
     {isScanning ? (
-     <QRScanner
-      active={isScanning}
-      onSuccess={openSuccess}
-      onError={openError}
-      onClose={() => setIsScanning(false)}
-     />
+     mode === 'qr' ? (
+      <QRScanner
+       active
+       onSuccess={(value) => showDialog('QR Code', value)}
+       onError={(error) => showDialog('Camera Error', error)}
+       onClose={() => setIsScanning(false)}
+      />
+     ) : (
+      <MenuScanner
+       onSuccess={(text) => showDialog('Menu Text', text)}
+       onError={(error) => showDialog('Camera Error', error)}
+       onClose={() => setIsScanning(false)}
+      />
+     )
     ) : (
      <div className='flex h-full flex-col px-8'>
+      <ScannerMode value={mode} onChange={setMode} />
+
       <div className='mt-5 text-center'>
-       <h1 className='text-2xl leading-tight font-semibold text-[#241C17]'>
+       <h1 className='text-2xl font-semibold leading-tight text-[#241C17]'>
         {greeting},
         <br />
         {name || 'Гость'}
@@ -90,11 +92,14 @@ export default function ScanPage() {
       </div>
 
       <div className='mt-5 text-center'>
-       <h2 className='text-xl text-[#241C17]'>Запустите сканирование</h2>
+       <h2 className='text-xl text-[#241C17]'>
+        {mode === 'qr' ? 'Запустите сканирование' : 'Сфотографируйте меню'}
+       </h2>
 
-       <p className='mt-4 text-sm text-[#847B73] max-w-65 mx-auto'>
-        Наведите камеру на QR-код или меню на вашем столике, чтобы пригласить
-        AI-официанта
+       <p className='mx-auto mt-4 max-w-65 text-sm text-[#847B73]'>
+        {mode === 'qr'
+         ? 'Наведите камеру на QR-код.'
+         : 'Сделайте фотографию меню для распознавания.'}
        </p>
       </div>
 
@@ -103,25 +108,23 @@ export default function ScanPage() {
        className='mt-auto h-14 rounded-full bg-[#C87437] text-base hover:bg-[#B96530]'
       >
        <Camera className='mr-2 h-5 w-5' />
-       Сканировать
+       {mode === 'qr' ? 'Сканировать QR' : 'Сделать фото'}
       </Button>
      </div>
     )}
    </div>
 
    <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-    <DialogContent className='sm:max-w-md'>
+    <DialogContent>
      <DialogHeader>
       <DialogTitle>{dialog.title}</DialogTitle>
 
-      <DialogDescription className='break-all pt-2 text-base'>
+      <DialogDescription className='break-all whitespace-pre-wrap'>
        {dialog.description}
       </DialogDescription>
      </DialogHeader>
 
-     <Button onClick={closeDialog} className='mt-4'>
-      Закрыть
-     </Button>
+     <Button onClick={() => setDialogOpen(false)}>Закрыть</Button>
     </DialogContent>
    </Dialog>
   </>
