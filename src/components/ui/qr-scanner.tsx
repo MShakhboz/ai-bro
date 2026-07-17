@@ -2,17 +2,21 @@
 
 import { useEffect, useRef } from 'react'
 import QrScanner from 'qr-scanner'
+import { Button } from './button'
+import { X } from 'lucide-react'
 
 interface QRScannerProps {
  active: boolean
  onSuccess: (value: string) => void
  onError: (message: string) => void
+ onClose: () => void
 }
 
 export default function QRScanner({
  active,
  onSuccess,
  onError,
+ onClose,
 }: QRScannerProps) {
  const videoRef = useRef<HTMLVideoElement>(null)
  const scannerRef = useRef<QrScanner | null>(null)
@@ -82,6 +86,19 @@ export default function QRScanner({
 
     <p className='mt-2 text-sm opacity-80'>Point your camera at a QR code.</p>
    </div>
+   <Button
+    size='icon'
+    variant='secondary'
+    className='absolute left-5 top-5 z-50 rounded-full'
+    onClick={() => {
+     scannerRef.current?.stop()
+     scannerRef.current?.destroy()
+
+     onClose()
+    }}
+   >
+    <X className='h-5 w-5' />
+   </Button>
   </div>
  )
 }

@@ -71,6 +71,7 @@ export default function ScanPage() {
       active={isScanning}
       onSuccess={openSuccess}
       onError={openError}
+      onClose={() => setIsScanning(false)}
      />
     ) : (
      <div className='flex h-full flex-col px-8'>
