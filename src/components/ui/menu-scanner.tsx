@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { X, Camera } from 'lucide-react'
+import { Camera, X } from 'lucide-react'
 import Tesseract from 'tesseract.js'
 
 import { Button } from '@/components/ui/button'
@@ -14,37 +14,60 @@ interface Props {
 
 export default function MenuScanner({ onSuccess, onError, onClose }: Props) {
  const videoRef = useRef<HTMLVideoElement>(null)
-
- const streamRef = useRef<MediaStream>()
+ const streamRef = useRef<MediaStream | null>(null)
 
  const [loading, setLoading] = useState(false)
 
  useEffect(() => {
-  startCamera()
+  void startCamera()
 
-  return stopCamera
+  return () => {
+   stopCamera()
+  }
  }, [])
 
  async function startCamera() {
   try {
    const stream = await navigator.mediaDevices.getUserMedia({
     video: {
-     facingMode: 'environment',
+     facingMode: {
+      ideal: 'environment',
+     },
     },
+    audio: false,
    })
 
    streamRef.current = stream
 
-   if (videoRef.current) {
-    videoRef.current.srcObject = stream
-   }
-  } catch {
-   onError('Cannot access camera')
+   if (!videoRef.current) return
+
+   videoRef.current.srcObject = stream
+
+   await new Promise<void>((resolve) => {
+    if (!videoRef.current) {
+     resolve()
+     return
+    }
+
+    videoRef.current.onloadedmetadata = () => {
+     videoRef.current?.play()
+     resolve()
+    }
+   })
+  } catch (error) {
+   console.error(error)
+   onError('Cannot access camera.')
   }
  }
 
  function stopCamera() {
   streamRef.current?.getTracks().forEach((track) => track.stop())
+
+  streamRef.current = null
+
+  if (videoRef.current) {
+   videoRef.current.srcObject = null
+  }
  }
 
  async function capture() {
@@ -53,16 +76,34 @@ export default function MenuScanner({ onSuccess, onError, onClose }: Props) {
   setLoading(true)
 
   try {
+   const video = videoRef.current
+
    const canvas = document.createElement('canvas')
 
-   canvas.width = videoRef.current.videoWidth
-   canvas.height = videoRef.current.videoHeight
+   canvas.width = video.videoWidth
+   canvas.height = video.videoHeight
 
-   canvas.getContext('2d')?.drawImage(videoRef.current, 0, 0)
+   const ctx = canvas.getContext('2d')
 
-   const blob = await new Promise<Blob>((resolve) =>
-    canvas.toBlob((blob) => resolve(blob!), 'image/jpeg', 0.95),
-   )
+   if (!ctx) {
+    throw new Error('Canvas not supported.')
+   }
+
+   ctx.drawImage(video, 0, 0)
+
+   const blob = await new Promise<Blob>((resolve, reject) => {
+    canvas.toBlob(
+     (blob) => {
+      if (blob) {
+       resolve(blob)
+      } else {
+       reject(new Error('Failed to capture image.'))
+      }
+     },
+     'image/jpeg',
+     0.95,
+    )
+   })
 
    const {
     data: { text },
@@ -70,8 +111,10 @@ export default function MenuScanner({ onSuccess, onError, onClose }: Props) {
 
    stopCamera()
 
-   onSuccess(text)
-  } catch {
+   onSuccess(text.trim())
+  } catch (error) {
+   console.error(error)
+
    onError('Unable to recognize text.')
   } finally {
    setLoading(false)
@@ -79,7 +122,7 @@ export default function MenuScanner({ onSuccess, onError, onClose }: Props) {
  }
 
  return (
-  <div className='relative h-full'>
+  <div className='relative h-full bg-black'>
    <video
     ref={videoRef}
     autoPlay
@@ -91,21 +134,29 @@ export default function MenuScanner({ onSuccess, onError, onClose }: Props) {
    <Button
     size='icon'
     variant='secondary'
-    className='absolute left-5 top-5'
+    className='absolute left-5 top-5 z-50 rounded-full'
     onClick={() => {
      stopCamera()
      onClose()
     }}
    >
-    <X />
+    <X className='h-5 w-5' />
    </Button>
+
+   <div className='pointer-events-none absolute inset-0 flex items-center justify-center'>
+    <div className='h-72 w-72 rounded-3xl border-2 border-dashed border-white/80' />
+   </div>
 
    <Button
     disabled={loading}
     onClick={capture}
     className='absolute bottom-8 left-1/2 h-16 w-16 -translate-x-1/2 rounded-full'
    >
-    <Camera />
+    {loading ? (
+     <span className='text-sm'>...</span>
+    ) : (
+     <Camera className='h-6 w-6' />
+    )}
    </Button>
   </div>
  )
