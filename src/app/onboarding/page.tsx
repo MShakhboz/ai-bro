@@ -59,7 +59,7 @@ export default function OnboardingPage() {
  }
 
  return (
-  <div className='flex h-full w-full flex-col px-6 py-10'>
+  <div className='flex h-full w-full flex-col px-6 py-2'>
    <Carousel
     setApi={setApi}
     opts={{
@@ -93,7 +93,7 @@ export default function OnboardingPage() {
     </CarouselContent>
    </Carousel>
 
-   <div className='mt-8 flex items-center justify-center gap-2'>
+   <div className='mt-2 flex items-center justify-center gap-2'>
     {slides.map((_, index) => (
      <div
       key={index}
@@ -106,17 +106,18 @@ export default function OnboardingPage() {
 
    <Button
     onClick={handleNext}
-    className='mt-8 h-14 rounded-2xl bg-[#C87437] text-base hover:bg-[#B9642F]'
+    className='mt-2 h-14 rounded-2xl bg-[#C87437] text-sm hover:bg-[#B9642F]'
    >
     {current === slides.length - 1 ? 'Начать' : 'Далее'}
    </Button>
 
-   <button
+   <Button
     onClick={() => router.push('/name')}
-    className='mt-4 text-sm text-[#7E7771]'
+    variant='link'
+    className='mt-2 h-14 rounded-2xl text-sm text-[#7A6A52]'
    >
     Пропустить
-   </button>
+   </Button>
   </div>
  )
 }
