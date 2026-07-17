@@ -14,7 +14,7 @@ export default function MobileLayout({
  return (
   <main className='flex min-h-dvh items-center justify-center bg-[#F6F3EE]'>
    <div
-    className={`relative h-dvh w-full overflow-hidden bg-white md:h-[860px] md:max-w-[430px] md:rounded-[36px] md:shadow-xl ${className}`}
+    className={`relative h-dvh w-full bg-white md:h-215 md:max-w-107.5 md:rounded-[36px] md:shadow-xl ${className}`}
    >
     {children}
    </div>

@@ -65,7 +65,7 @@ export default function ScanPage() {
 
  return (
   <>
-   <div className='relative h-screen w-full overflow-hidden bg-[#F6F3EE] md:h-[860px] md:max-w-[430px] md:rounded-[36px] md:shadow-xl'>
+   <div className='relative h-full py-3 w-full  bg-[#F6F3EE]'>
     {isScanning ? (
      <QRScanner
       active={isScanning}
@@ -73,8 +73,8 @@ export default function ScanPage() {
       onError={openError}
      />
     ) : (
-     <div className='flex h-full flex-col px-8 py-10'>
-      <div className='mt-14 text-center'>
+     <div className='flex h-full flex-col px-8'>
+      <div className='mt-5 text-center'>
        <h1 className='text-2xl leading-tight font-semibold text-[#241C17]'>
         {greeting},
         <br />
@@ -82,23 +82,16 @@ export default function ScanPage() {
        </h1>
       </div>
 
-      <div className='mt-14 flex justify-center'>
-       <div className='flex h-72 w-72 items-center justify-center rounded-[34px] border-2 border-dashed border-[#C87437]'>
+      <div className='mt-6 flex justify-center'>
+       <div className='flex h-55 w-55 items-center justify-center rounded-[34px] border-2 border-dashed border-[#C87437]'>
         <Camera size={72} strokeWidth={1.5} className='text-[#C87437]' />
        </div>
       </div>
 
-      <div className='mt-10 text-center'>
-       <h2
-        className='text-3xl text-[#241C17]'
-        style={{
-         fontFamily: 'Georgia, serif',
-        }}
-       >
-        Запустите сканирование
-       </h2>
+      <div className='mt-5 text-center'>
+       <h2 className='text-xl text-[#241C17]'>Запустите сканирование</h2>
 
-       <p className='mt-4 text-lg leading-8 text-[#847B73]'>
+       <p className='mt-4 text-sm text-[#847B73] max-w-65 mx-auto'>
         Наведите камеру на QR-код или меню на вашем столике, чтобы пригласить
         AI-официанта
        </p>
@@ -106,7 +99,7 @@ export default function ScanPage() {
 
       <Button
        onClick={() => setIsScanning(true)}
-       className='mt-auto h-16 rounded-2xl bg-[#C87437] text-lg hover:bg-[#B86631]'
+       className='mt-auto h-14 rounded-full bg-[#C87437] text-base hover:bg-[#B96530]'
       >
        <Camera className='mr-2 h-5 w-5' />
        Сканировать
