@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import Webcam from 'react-webcam'
 import { Button } from '@/components/ui/button'
 import { X, Camera, Loader2 } from 'lucide-react'
@@ -23,28 +23,31 @@ export default function CameraScanner({
 }: Props) {
  const [mode, setMode] = useState<Mode>('qr')
 
+ // Keeps the background scanning loop continuously aware of the active mode
+ const activeModeRef = useRef<Mode>('qr')
+
+ // Synchronize the reference whenever the state tab layout shifts
+ useEffect(() => {
+  activeModeRef.current = mode
+ }, [mode])
+
  const {
   webcamRef,
   ready,
   loading,
-  startQr,
-  stopQr,
   capturePhoto,
   stopCamera,
   handleUserMedia,
  } = useCamera({
-  onQrSuccess,
+  onQrSuccess: (value) => {
+   // Read from the mutable ref to instantly determine if we handle the scan
+   if (activeModeRef.current === 'qr') {
+    onQrSuccess(value)
+   }
+  },
   onPhotoSuccess,
   onError,
  })
-
- useEffect(() => {
-  if (mode === 'qr') {
-   startQr()
-  } else {
-   stopQr()
-  }
- }, [mode, startQr, stopQr])
 
  return (
   <div className='relative h-full w-full bg-black overflow-hidden'>
@@ -53,11 +56,7 @@ export default function CameraScanner({
     ref={webcamRef}
     screenshotFormat='image/jpeg'
     onUserMedia={handleUserMedia}
-    onUserMediaError={(err) => {
-     console.error(err)
-     onError('Unable to access camera.')
-    }}
-    // Prevents QrScanner scaling configurations from resizing the final photos
+    onUserMediaError={() => onError('Unable to access camera.')}
     forceScreenshotSourceSize={true}
     videoConstraints={{
      facingMode: { ideal: 'environment' },
@@ -111,7 +110,7 @@ export default function CameraScanner({
     {mode === 'qr' ? (
      <div className='relative h-72 w-72 rounded-3xl border-2 border-white border-dashed' />
     ) : (
-     <div />
+     <div className='h-72 w-72 rounded-3xl border-2 border-dashed border-white' />
     )}
    </div>
 

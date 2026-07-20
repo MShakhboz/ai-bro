@@ -13,9 +13,6 @@ interface Props {
 export function useCamera({ onQrSuccess, onPhotoSuccess, onError }: Props) {
  const webcamRef = useRef<Webcam>(null)
  const scannerRef = useRef<QrScanner | null>(null)
-
- // Track QR active state using standard state so updates trigger accurately
- const [qrActive, setQrActive] = useState(true)
  const [ready, setReady] = useState(false)
  const [loading, setLoading] = useState(false)
 
@@ -23,27 +20,20 @@ export function useCamera({ onQrSuccess, onPhotoSuccess, onError }: Props) {
   const video = webcamRef.current?.video
   if (!video || scannerRef.current) return
 
+  // Brief timeout to ensure WebRTC stream track buffers are fully loaded
   setTimeout(() => {
    try {
     if (scannerRef.current) return
 
     scannerRef.current = new QrScanner(
      video,
-     (result) => {
-      // Look at the current real-time state variable directly
-      if (scannerRef.current && (scannerRef.current as any)._isQrActive) {
-       onQrSuccess(result.data)
-      }
-     },
+     (result) => onQrSuccess(result.data), // Stream data straight out cleanly
      {
       preferredCamera: 'environment',
       returnDetailedScanResult: true,
       maxScansPerSecond: 10,
      },
     )
-
-    // Store state data safely inside the engine scope directly
-    ;(scannerRef.current as any)._isQrActive = qrActive
 
     scannerRef.current.start()
     setReady(true)
@@ -52,21 +42,7 @@ export function useCamera({ onQrSuccess, onPhotoSuccess, onError }: Props) {
     onError('Unable to bind QR scanner.')
    }
   }, 200)
- }, [onQrSuccess, onError, qrActive])
-
- const startQr = useCallback(() => {
-  setQrActive(true)
-  if (scannerRef.current) {
-   ;(scannerRef.current as any)._isQrActive = true
-  }
- }, [])
-
- const stopQr = useCallback(() => {
-  setQrActive(false)
-  if (scannerRef.current) {
-   ;(scannerRef.current as any)._isQrActive = false
-  }
- }, [])
+ }, [onQrSuccess, onError])
 
  async function capturePhoto() {
   if (!webcamRef.current || !ready) return
@@ -101,8 +77,6 @@ export function useCamera({ onQrSuccess, onPhotoSuccess, onError }: Props) {
   webcamRef,
   ready,
   loading,
-  startQr,
-  stopQr,
   capturePhoto,
   stopCamera,
   handleUserMedia,
