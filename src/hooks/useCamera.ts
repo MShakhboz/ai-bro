@@ -14,14 +14,18 @@ export function useCamera({ onQrSuccess, onPhotoSuccess, onError }: Props) {
  const streamRef = useRef<MediaStream | null>(null)
  const scannerRef = useRef<QrScanner | null>(null)
  const trackRef = useRef<MediaStreamTrack | null>(null)
+ const mountedRef = useRef(true)
 
  const [ready, setReady] = useState(false)
  const [loading, setLoading] = useState(false)
 
  useEffect(() => {
+  mountedRef.current = true
+
   startCamera()
 
   return () => {
+   mountedRef.current = false
    stopCamera()
   }
  }, [])
@@ -36,6 +40,13 @@ export function useCamera({ onQrSuccess, onPhotoSuccess, onError }: Props) {
     },
    })
 
+   // Effect was cleaned up (e.g. Strict Mode double-invoke) while we
+   // were awaiting getUserMedia — kill this stream, don't attach it.
+   if (!mountedRef.current) {
+    stream.getTracks().forEach((track) => track.stop())
+    return
+   }
+
    streamRef.current = stream
    trackRef.current = stream.getVideoTracks()[0] ?? null
 
@@ -44,6 +55,13 @@ export function useCamera({ onQrSuccess, onPhotoSuccess, onError }: Props) {
    video.srcObject = stream
 
    await video.play()
+
+   // If the camera track ever ends unexpectedly (e.g. another app
+   // claims the camera, or the tab loses focus on some devices),
+   // surface it instead of silently showing a black frame.
+   trackRef.current?.addEventListener('ended', () => {
+    if (mountedRef.current) onError('Camera stream ended.')
+   })
 
    scannerRef.current = new QrScanner(
     video,
@@ -56,16 +74,22 @@ export function useCamera({ onQrSuccess, onPhotoSuccess, onError }: Props) {
 
    setReady(true)
   } catch {
-   onError('Unable to access camera.')
+   if (mountedRef.current) onError('Unable to access camera.')
   }
  }
 
  const startQr = useCallback(() => {
   scannerRef.current?.start()
+  // start() resumes the video itself, but play() is a safe no-op
+  // if it's already playing.
+  videoRef.current?.play().catch(() => {})
  }, [])
 
  const stopQr = useCallback(() => {
   scannerRef.current?.stop()
+  // QrScanner.stop() pauses the <video> element — resume it so the
+  // live feed keeps showing while we're just not scanning for QR.
+  videoRef.current?.play().catch(() => {})
  }, [])
 
  async function capturePhoto() {
@@ -74,10 +98,6 @@ export function useCamera({ onQrSuccess, onPhotoSuccess, onError }: Props) {
   setLoading(true)
 
   try {
-   // Prefer ImageCapture — grabs a full-res frame straight from the
-   // sensor/pipeline, same as a native camera app, instead of
-   // whatever resolution the <video> element happens to be
-   // rendering at.
    let blob: Blob | null = null
 
    if ('ImageCapture' in window && trackRef.current) {
@@ -123,6 +143,7 @@ export function useCamera({ onQrSuccess, onPhotoSuccess, onError }: Props) {
 
  function stopCamera() {
   scannerRef.current?.destroy()
+  scannerRef.current = null
 
   streamRef.current?.getTracks().forEach((track) => track.stop())
 
