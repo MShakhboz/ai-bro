@@ -24,7 +24,11 @@ export default function ScanPage() {
 
  const [dialogOpen, setDialogOpen] = useState(false)
 
- const [dialog, setDialog] = useState({
+ const [dialog, setDialog] = useState<{
+  title: string
+  description: string
+  imageUrl?: string
+ }>({
   title: '',
   description: '',
  })
@@ -38,12 +42,13 @@ export default function ScanPage() {
   return 'Добрый вечер'
  }, [])
 
- const showDialog = (title: string, description: string) => {
+ const showDialog = (title: string, description: string, imageUrl?: string) => {
   setIsScanning(false)
 
   setDialog({
    title,
    description,
+   imageUrl,
   })
 
   setDialogOpen(true)
@@ -57,8 +62,8 @@ export default function ScanPage() {
       onQrSuccess={(value) => {
        showDialog('QR Code', value)
       }}
-      onMenuSuccess={(text) => {
-       showDialog('Menu Text', text)
+      onPhotoSuccess={(_photo, dataUrl) => {
+       showDialog('Фото меню', '', dataUrl)
       }}
       onError={(error) => {
        showDialog('Camera Error', error)
@@ -110,10 +115,20 @@ export default function ScanPage() {
      <DialogHeader>
       <DialogTitle>{dialog.title}</DialogTitle>
 
-      <DialogDescription className='break-all whitespace-pre-wrap'>
-       {dialog.description}
-      </DialogDescription>
+      {dialog.description && (
+       <DialogDescription className='break-all whitespace-pre-wrap'>
+        {dialog.description}
+       </DialogDescription>
+      )}
      </DialogHeader>
+
+     {dialog.imageUrl && (
+      <img
+       src={dialog.imageUrl}
+       alt='Фото меню'
+       className='max-h-[60vh] w-full rounded-lg object-contain'
+      />
+     )}
 
      <Button onClick={() => setDialogOpen(false)}>Закрыть</Button>
     </DialogContent>
