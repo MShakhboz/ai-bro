@@ -97,7 +97,7 @@ export default function CameraScanner({
     )}
    </div>
 
-   <div className='absolute bottom-36 left-0 top-3 right-0 text-center text-white'>
+   <div className='absolute bottom-26 left-0 right-0 text-center text-white'>
     {mode === 'qr'
      ? 'Наведите камеру на QR-код на столе'
      : 'Сфотографируйте страницу меню'}
@@ -107,7 +107,7 @@ export default function CameraScanner({
     <Button
      disabled={!ready || loading}
      onClick={captureMenu}
-     className='absolute bottom-10 left-1/2 h-20 w-20 -translate-x-1/2 rounded-full border-[6px] border-white bg-white text-black hover:bg-white'
+     className='absolute bottom-5 left-1/2 h-20 w-20 -translate-x-1/2 rounded-full border-[6px] border-white bg-white text-black hover:bg-white'
     >
      {loading ? <Loader2 className='animate-spin' /> : <Camera />}
     </Button>
