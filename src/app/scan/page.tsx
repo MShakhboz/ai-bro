@@ -3,9 +3,7 @@
 import { useMemo, useState } from 'react'
 import { Camera } from 'lucide-react'
 
-import QRScanner from '@/components/ui/qr-scanner'
-import MenuScanner from '@/components/ui/menu-scanner'
-import ScannerMode from '@/components/ui/scanner-mode'
+import CameraScanner from '@/components/ui/camera-scanner'
 
 import { useAppStore } from '@/store/use-app-store'
 
@@ -19,12 +17,8 @@ import {
  DialogTitle,
 } from '@/components/ui/dialog'
 
-type ScanMode = 'qr' | 'menu'
-
 export default function ScanPage() {
  const { name } = useAppStore()
-
- const [mode, setMode] = useState<ScanMode>('qr')
 
  const [isScanning, setIsScanning] = useState(false)
 
@@ -59,24 +53,22 @@ export default function ScanPage() {
   <>
    <div className='relative h-full w-full bg-[#F6F3EE] py-3'>
     {isScanning ? (
-     mode === 'qr' ? (
-      <QRScanner
-       active
-       onSuccess={(value) => showDialog('QR Code', value)}
-       onError={(error) => showDialog('Camera Error', error)}
-       onClose={() => setIsScanning(false)}
-      />
-     ) : (
-      <MenuScanner
-       onSuccess={(text) => showDialog('Menu Text', text)}
-       onError={(error) => showDialog('Camera Error', error)}
-       onClose={() => setIsScanning(false)}
-      />
-     )
+     <CameraScanner
+      onQrSuccess={(value) => {
+       showDialog('QR Code', value)
+      }}
+      onMenuSuccess={(text) => {
+       showDialog('Menu Text', text)
+      }}
+      onError={(error) => {
+       showDialog('Camera Error', error)
+      }}
+      onClose={() => {
+       setIsScanning(false)
+      }}
+     />
     ) : (
      <div className='flex h-full flex-col px-8'>
-      <ScannerMode value={mode} onChange={setMode} />
-
       <div className='mt-5 text-center'>
        <h1 className='text-2xl font-semibold leading-tight text-[#241C17]'>
         {greeting},
@@ -93,13 +85,12 @@ export default function ScanPage() {
 
       <div className='mt-5 text-center'>
        <h2 className='text-xl text-[#241C17]'>
-        {mode === 'qr' ? 'Запустите сканирование' : 'Сфотографируйте меню'}
+        Сканируйте QR-код или сфотографируйте меню
        </h2>
 
        <p className='mx-auto mt-4 max-w-65 text-sm text-[#847B73]'>
-        {mode === 'qr'
-         ? 'Наведите камеру на QR-код.'
-         : 'Сделайте фотографию меню для распознавания.'}
+        После открытия камеры вы сможете переключаться между QR-кодом и
+        фотографией меню.
        </p>
       </div>
 
@@ -108,7 +99,7 @@ export default function ScanPage() {
        className='mt-auto h-14 rounded-full bg-[#C87437] text-base hover:bg-[#B96530]'
       >
        <Camera className='mr-2 h-5 w-5' />
-       {mode === 'qr' ? 'Сканировать QR' : 'Сделать фото'}
+       Открыть камеру
       </Button>
      </div>
     )}
