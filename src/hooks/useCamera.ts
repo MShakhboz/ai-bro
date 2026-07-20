@@ -31,19 +31,16 @@ export function useCamera({ onQrSuccess, onPhotoSuccess, onError }: Props) {
   if (!videoRef.current) return
 
   try {
-   // Let QrScanner handle the camera initialization and stream lifecycle entirely
    scannerRef.current = new QrScanner(
     videoRef.current,
     (result) => onQrSuccess(result.data),
     {
      preferredCamera: 'environment',
      returnDetailedScanResult: true,
-     // Match your ideal resolution requirements within the scanner configuration
      maxScansPerSecond: 10,
     },
    )
 
-   // Start the camera stream automatically
    await scannerRef.current.start()
 
    if (!mountedRef.current) {
@@ -60,13 +57,11 @@ export function useCamera({ onQrSuccess, onPhotoSuccess, onError }: Props) {
   }
  }
 
- // Since the camera runs constantly now, startQr/stopQr toggle the decoding engine
  const startQr = useCallback(() => {
   scannerRef.current?.start().catch(() => {})
  }, [])
 
  const stopQr = useCallback(() => {
-  // pause() stops the scanning intervals without destroying the camera feed stream
   scannerRef.current?.pause()
  }, [])
 
@@ -77,17 +72,32 @@ export function useCamera({ onQrSuccess, onPhotoSuccess, onError }: Props) {
 
   try {
    const video = videoRef.current
-   const canvas = document.createElement('canvas')
 
-   // Capture at native stream resolution
-   canvas.width = video.videoWidth
-   canvas.height = video.videoHeight
+   // Crucial: Fallback if QrScanner downsamples the canvas target dimensions
+   let width = video.videoWidth
+   let height = video.videoHeight
+
+   // If video dimensions haven't updated or are flattened by the scanner engine,
+   // pull them out of the active hardware stream track itself
+   if (!width || !height) {
+    const stream = video.srcObject as MediaStream | null
+    const track = stream?.getVideoTracks()[0]
+    const settings = track?.getSettings()
+    width = settings?.width || 1280
+    height = settings?.height || 720
+   }
+
+   const canvas = document.createElement('canvas')
+   canvas.width = width
+   canvas.height = height
 
    const ctx = canvas.getContext('2d')
    if (!ctx) throw new Error('Canvas context unavailable')
 
    ctx.imageSmoothingEnabled = true
    ctx.imageSmoothingQuality = 'high'
+
+   // Draw current visual frame buffer
    ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
 
    const blob = await new Promise<Blob>((resolve, reject) => {
