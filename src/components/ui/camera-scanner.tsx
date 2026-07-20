@@ -103,7 +103,7 @@ export default function CameraScanner({
    <Button
     size='icon'
     variant='secondary'
-    className='absolute left-5 top-5 z-50 rounded-full'
+    className='absolute right-5 top-5 z-50 rounded-full'
     onClick={() => {
      stopCamera()
      onClose()
@@ -114,9 +114,26 @@ export default function CameraScanner({
 
    <div className='pointer-events-none absolute inset-0 flex items-center justify-center'>
     {mode === 'qr' ? (
-     <div className='relative h-72 w-72 rounded-3xl border-2 border-white border-dashed' />
+     <div className='relative h-72 w-72'>
+      <svg
+       className='absolute inset-0 h-full w-full'
+       xmlns='http://www.w3.org/2000/svg'
+      >
+       <rect
+        x='1'
+        y='1'
+        width='calc(100% - 2px)'
+        height='calc(100% - 2px)'
+        rx='24'
+        fill='none'
+        stroke='white'
+        strokeWidth='2'
+        strokeDasharray='16 32' // very large gap
+       />
+      </svg>
+     </div>
     ) : (
-     <div className='h-72 w-72 rounded-3xl border-2 border-dashed border-white' />
+     <div />
     )}
    </div>
 
