@@ -16,49 +16,56 @@ export function useCamera({ onQrSuccess, onPhotoSuccess, onError }: Props) {
  const [ready, setReady] = useState(false)
  const [loading, setLoading] = useState(false)
 
- const handleUserMedia = useCallback(() => {
+ // Triggers once the video element has successfully loaded frames
+ const handleVideoLoad = useCallback(() => {
   const video = webcamRef.current?.video
-  if (!video || scannerRef.current) return
 
-  // Brief timeout to ensure WebRTC stream track buffers are fully loaded
-  setTimeout(() => {
-   try {
-    if (scannerRef.current) return
+  // Guard clause: ensure the video element is rendering frames and scanner isn't already running
+  if (!video || video.readyState < 2 || scannerRef.current) return
 
-    scannerRef.current = new QrScanner(
-     video,
-     (result) => onQrSuccess(result.data), // Stream data straight out cleanly
-     {
-      preferredCamera: 'environment',
-      returnDetailedScanResult: true,
-      maxScansPerSecond: 10,
-     },
-    )
+  try {
+   // Point to the official worker CDN directly inside the client lifecycle to avoid Next.js SSR build breaks
+   QrScanner.WORKER_PATH =
+    'https://cdnjs.cloudflare.com/ajax/libs/qr-scanner/1.4.2/qr-scanner-worker.min.js'
 
-    scannerRef.current.start()
-    setReady(true)
-   } catch (e) {
-    console.error('QR Scanner attach failed:', e)
-    onError('Unable to bind QR scanner.')
-   }
-  }, 200)
+   scannerRef.current = new QrScanner(
+    video,
+    (result) => onQrSuccess(result.data),
+    {
+     preferredCamera: 'environment',
+     returnDetailedScanResult: true,
+     maxScansPerSecond: 8,
+     highlightScanRegion: false,
+    },
+   )
+
+   scannerRef.current
+    .start()
+    .then(() => setReady(true))
+    .catch((err) => {
+     console.error('Failed to start QR engine stream:', err)
+     onError('Failed to start QR engine.')
+    })
+  } catch (e) {
+   console.error('QR Scanner initialization failed:', e)
+   onError('Unable to bind QR scanner.')
+  }
  }, [onQrSuccess, onError])
 
  async function capturePhoto() {
   if (!webcamRef.current || !ready) return
 
   setLoading(true)
-
   try {
    const dataUrl = webcamRef.current.getScreenshot()
-   if (!dataUrl) throw new Error('Screenshot failed')
+   if (!dataUrl) throw new Error('Screenshot came back null')
 
    const response = await fetch(dataUrl)
    const blob = await response.blob()
 
    onPhotoSuccess(blob, dataUrl)
   } catch (err) {
-   console.error('Photo capture failed:', err)
+   console.error('Photo capture operation failed:', err)
    onError('Failed to capture photo.')
   } finally {
    setLoading(false)
@@ -79,6 +86,6 @@ export function useCamera({ onQrSuccess, onPhotoSuccess, onError }: Props) {
   loading,
   capturePhoto,
   stopCamera,
-  handleUserMedia,
+  handleVideoLoad,
  }
 }

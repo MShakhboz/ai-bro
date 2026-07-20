@@ -23,10 +23,9 @@ export default function CameraScanner({
 }: Props) {
  const [mode, setMode] = useState<Mode>('qr')
 
- // Keeps the background scanning loop continuously aware of the active mode
+ // Keeps mutable track of what tab the user is seeing in real-time
  const activeModeRef = useRef<Mode>('qr')
 
- // Synchronize the reference whenever the state tab layout shifts
  useEffect(() => {
   activeModeRef.current = mode
  }, [mode])
@@ -37,10 +36,10 @@ export default function CameraScanner({
   loading,
   capturePhoto,
   stopCamera,
-  handleUserMedia,
+  handleVideoLoad,
  } = useCamera({
   onQrSuccess: (value) => {
-   // Read from the mutable ref to instantly determine if we handle the scan
+   // The background engine scans continuously, but we block processing unless the active tab is 'qr'
    if (activeModeRef.current === 'qr') {
     onQrSuccess(value)
    }
@@ -55,13 +54,20 @@ export default function CameraScanner({
     audio={false}
     ref={webcamRef}
     screenshotFormat='image/jpeg'
-    onUserMedia={handleUserMedia}
-    onUserMediaError={() => onError('Unable to access camera.')}
+    onUserMedia={handleVideoLoad}
+    onUserMediaError={(err) => {
+     console.error('Webcam media tracking failure:', err)
+     onError('Unable to access camera.')
+    }}
+    // Pass HTML video properties directly as top-level props
+    onCanPlay={handleVideoLoad}
+    playsInline={true}
+    muted={true}
     forceScreenshotSourceSize={true}
     videoConstraints={{
      facingMode: { ideal: 'environment' },
-     width: { ideal: 1920 },
-     height: { ideal: 1080 },
+     width: { ideal: 1280 },
+     height: { ideal: 720 },
     }}
     className='h-full w-full object-cover'
    />
