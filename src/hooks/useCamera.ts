@@ -13,9 +13,9 @@ interface Props {
 export function useCamera({ onQrSuccess, onPhotoSuccess, onError }: Props) {
  const webcamRef = useRef<Webcam>(null)
  const scannerRef = useRef<QrScanner | null>(null)
- // Use a ref to quickly toggle decoding on/off without affecting the hardware stream
- const isQrActiveRef = useRef(true)
 
+ // Track QR active state using standard state so updates trigger accurately
+ const [qrActive, setQrActive] = useState(true)
  const [ready, setReady] = useState(false)
  const [loading, setLoading] = useState(false)
 
@@ -30,8 +30,8 @@ export function useCamera({ onQrSuccess, onPhotoSuccess, onError }: Props) {
     scannerRef.current = new QrScanner(
      video,
      (result) => {
-      // ONLY trigger success if QR processing mode is active
-      if (isQrActiveRef.current) {
+      // Look at the current real-time state variable directly
+      if (scannerRef.current && (scannerRef.current as any)._isQrActive) {
        onQrSuccess(result.data)
       }
      },
@@ -42,6 +42,9 @@ export function useCamera({ onQrSuccess, onPhotoSuccess, onError }: Props) {
      },
     )
 
+    // Store state data safely inside the engine scope directly
+    ;(scannerRef.current as any)._isQrActive = qrActive
+
     scannerRef.current.start()
     setReady(true)
    } catch (e) {
@@ -49,15 +52,20 @@ export function useCamera({ onQrSuccess, onPhotoSuccess, onError }: Props) {
     onError('Unable to bind QR scanner.')
    }
   }, 200)
- }, [onQrSuccess, onError])
+ }, [onQrSuccess, onError, qrActive])
 
- // Toggle flags instead of using pause() to protect the video feed track
  const startQr = useCallback(() => {
-  isQrActiveRef.current = true
+  setQrActive(true)
+  if (scannerRef.current) {
+   ;(scannerRef.current as any)._isQrActive = true
+  }
  }, [])
 
  const stopQr = useCallback(() => {
-  isQrActiveRef.current = false
+  setQrActive(false)
+  if (scannerRef.current) {
+   ;(scannerRef.current as any)._isQrActive = false
+  }
  }, [])
 
  async function capturePhoto() {
