@@ -1,7 +1,8 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import QrScanner from 'qr-scanner'
+import Webcam from 'react-webcam'
 
 interface Props {
  onQrSuccess(value: string): void
@@ -10,146 +11,97 @@ interface Props {
 }
 
 export function useCamera({ onQrSuccess, onPhotoSuccess, onError }: Props) {
- const videoRef = useRef<HTMLVideoElement>(null)
- const canvasRef = useRef<HTMLCanvasElement>(null)
-
- const streamRef = useRef<MediaStream | null>(null)
+ const webcamRef = useRef<Webcam>(null)
  const scannerRef = useRef<QrScanner | null>(null)
 
+ // Track QR active state using standard state so updates trigger accurately
  const [ready, setReady] = useState(false)
  const [loading, setLoading] = useState(false)
 
- const startCamera = useCallback(async () => {
-  if (streamRef.current) return
+ const handleUserMedia = useCallback(async () => {
+  const video = webcamRef.current?.video
 
-  try {
-   const stream = await navigator.mediaDevices.getUserMedia({
-    video: {
-     facingMode: {
-      ideal: 'environment',
+  if (!video || scannerRef.current) return
+
+  const initScanner = async () => {
+   try {
+    if (scannerRef.current) return
+
+    scannerRef.current = new QrScanner(
+     video,
+     (result) => {
+      onQrSuccess(result.data)
      },
-     width: {
-      ideal: 1920,
+     {
+      returnDetailedScanResult: true,
+      maxScansPerSecond: 10,
      },
-     height: {
-      ideal: 1080,
-     },
-    },
-    audio: false,
-   })
+    )
 
-   streamRef.current = stream
+    await scannerRef.current.start()
+    setReady(true)
 
-   const video = videoRef.current
-
-   if (!video) return
-
-   video.srcObject = stream
-
-   await video.play()
-
-   setReady(true)
-  } catch (err) {
-   console.error(err)
-   onError('Unable to access camera.')
+    console.log('QR Scanner started')
+   } catch (e) {
+    console.error('QR Scanner attach failed:', e)
+    onError('Unable to start QR scanner.')
+   }
   }
- }, [onError])
+
+  if (video.readyState >= HTMLMediaElement.HAVE_ENOUGH_DATA) {
+   await initScanner()
+  } else {
+   video.onloadeddata = () => {
+    void initScanner()
+   }
+  }
+ }, [onQrSuccess, onError])
 
  const startQr = useCallback(async () => {
-  const video = videoRef.current
-
-  if (!video) return
-
-  if (!scannerRef.current) {
-   scannerRef.current = new QrScanner(
-    video,
-    (result) => {
-     onQrSuccess(result.data)
-    },
-    {
-     returnDetailedScanResult: true,
-     maxScansPerSecond: 10,
-    },
-   )
-  }
-
-  await scannerRef.current.start()
- }, [onQrSuccess])
+  await scannerRef.current?.start()
+ }, [])
 
  const stopQr = useCallback(async () => {
   await scannerRef.current?.stop()
  }, [])
 
- const capturePhoto = useCallback(async () => {
-  const video = videoRef.current
-  const canvas = canvasRef.current
-
-  if (!video || !canvas) return
+ async function capturePhoto() {
+  if (!webcamRef.current || !ready) return
 
   setLoading(true)
 
   try {
-   canvas.width = video.videoWidth
-   canvas.height = video.videoHeight
+   const dataUrl = webcamRef.current.getScreenshot()
+   if (!dataUrl) throw new Error('Screenshot failed')
 
-   const ctx = canvas.getContext('2d')
-
-   if (!ctx) throw new Error()
-
-   ctx.drawImage(video, 0, 0)
-
-   const blob = await new Promise<Blob>((resolve, reject) => {
-    canvas.toBlob(
-     (blob) => {
-      if (!blob) {
-       reject(new Error())
-       return
-      }
-
-      resolve(blob)
-     },
-     'image/jpeg',
-     0.95,
-    )
-   })
-
-   const dataUrl = canvas.toDataURL('image/jpeg', 0.95)
+   const response = await fetch(dataUrl)
+   const blob = await response.blob()
 
    onPhotoSuccess(blob, dataUrl)
   } catch (err) {
-   console.error(err)
+   console.error('Photo capture failed:', err)
    onError('Failed to capture photo.')
   } finally {
    setLoading(false)
   }
- }, [onPhotoSuccess, onError])
+ }
 
- const stopCamera = useCallback(() => {
-  scannerRef.current?.destroy()
-  scannerRef.current = null
-
-  streamRef.current?.getTracks().forEach((track) => track.stop())
-  streamRef.current = null
-
-  setReady(false)
- }, [])
-
- useEffect(() => {
-  startCamera()
-
-  return () => {
-   stopCamera()
+ function stopCamera() {
+  if (scannerRef.current) {
+   scannerRef.current.destroy()
+   scannerRef.current = null
   }
- }, [startCamera, stopCamera])
+  setReady(false)
+ }
 
  return {
-  videoRef,
-  canvasRef,
+  webcamRef,
   ready,
   loading,
   startQr,
   stopQr,
   capturePhoto,
   stopCamera,
+  handleUserMedia,
  }
 }

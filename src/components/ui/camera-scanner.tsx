@@ -1,9 +1,9 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Camera, Loader2, X } from 'lucide-react'
-
+import Webcam from 'react-webcam'
 import { Button } from '@/components/ui/button'
+import { X, Camera, Loader2 } from 'lucide-react'
 import { useCamera } from '@/hooks/useCamera'
 
 type Mode = 'qr' | 'menu'
@@ -24,14 +24,14 @@ export default function CameraScanner({
  const [mode, setMode] = useState<Mode>('qr')
 
  const {
-  videoRef,
-  canvasRef,
+  webcamRef,
   ready,
   loading,
   startQr,
   stopQr,
   capturePhoto,
   stopCamera,
+  handleUserMedia,
  } = useCamera({
   onQrSuccess,
   onPhotoSuccess,
@@ -39,27 +39,33 @@ export default function CameraScanner({
  })
 
  useEffect(() => {
-  if (!ready) return
-
   if (mode === 'qr') {
-   void startQr()
+   startQr()
   } else {
-   void stopQr()
+   stopQr()
   }
- }, [mode, ready, startQr, stopQr])
+ }, [mode, startQr, stopQr])
 
  return (
-  <div className='relative h-full w-full overflow-hidden bg-black'>
-   <video
-    ref={videoRef}
-    playsInline
-    muted
-    autoPlay
+  <div className='relative h-full w-full bg-black overflow-hidden'>
+   <Webcam
+    audio={false}
+    ref={webcamRef}
+    screenshotFormat='image/jpeg'
+    onUserMedia={handleUserMedia}
+    onUserMediaError={(err) => {
+     console.error(err)
+     onError('Unable to access camera.')
+    }}
+    // Prevents QrScanner scaling configurations from resizing the final photos
+    forceScreenshotSourceSize={true}
+    videoConstraints={{
+     facingMode: { ideal: 'environment' },
+     width: { ideal: 1920 },
+     height: { ideal: 1080 },
+    }}
     className='h-full w-full object-cover'
    />
-
-   {/* Hidden canvas used for photo capture */}
-   <canvas ref={canvasRef} className='hidden' />
 
    {!ready && (
     <div className='absolute inset-0 z-50 flex items-center justify-center bg-black'>
@@ -67,12 +73,11 @@ export default function CameraScanner({
     </div>
    )}
 
-   {/* Mode Switch */}
-   <div className='absolute left-1/2 top-5 z-50 -translate-x-1/2'>
+   <div className='absolute top-5 left-1/2 z-50 -translate-x-1/2'>
     <div className='flex rounded-full bg-black/60 p-1 backdrop-blur'>
      <button
       onClick={() => setMode('qr')}
-      className={`rounded-full px-6 py-2 text-sm transition whitespace-nowrap ${
+      className={`rounded-full text-sm px-6 py-2 transition whitespace-nowrap ${
        mode === 'qr' ? 'bg-white text-black' : 'text-white'
       }`}
      >
@@ -81,7 +86,7 @@ export default function CameraScanner({
 
      <button
       onClick={() => setMode('menu')}
-      className={`rounded-full px-6 py-2 text-sm transition whitespace-nowrap ${
+      className={`rounded-full text-sm px-6 py-2 transition whitespace-nowrap ${
        mode === 'menu' ? 'bg-white text-black' : 'text-white'
       }`}
      >
@@ -90,7 +95,6 @@ export default function CameraScanner({
     </div>
    </div>
 
-   {/* Close */}
    <Button
     size='icon'
     variant='secondary'
@@ -103,26 +107,25 @@ export default function CameraScanner({
     <X />
    </Button>
 
-   {/* QR Overlay */}
-   {mode === 'qr' && (
-    <div className='pointer-events-none absolute inset-0 flex items-center justify-center'>
-     <div className='h-72 w-72 rounded-3xl border-2 border-dashed border-white' />
-    </div>
-   )}
+   <div className='pointer-events-none absolute inset-0 flex items-center justify-center'>
+    {mode === 'qr' ? (
+     <div className='relative h-72 w-72 rounded-3xl border-2 border-white border-dashed' />
+    ) : (
+     <div />
+    )}
+   </div>
 
-   {/* Hint */}
-   <div className='absolute bottom-28 left-0 right-0 px-6 text-center text-white'>
+   <div className='absolute bottom-26 left-0 right-0 text-center text-white'>
     {mode === 'qr'
      ? 'Наведите камеру на QR-код на столе'
      : 'Сфотографируйте страницу меню'}
    </div>
 
-   {/* Capture Button */}
    {mode === 'menu' && (
     <Button
      disabled={!ready || loading}
-     onClick={() => void capturePhoto()}
-     className='absolute bottom-6 left-1/2 h-20 w-20 -translate-x-1/2 rounded-full border-[6px] border-white bg-white text-black hover:bg-white'
+     onClick={capturePhoto}
+     className='absolute bottom-5 left-1/2 h-20 w-20 -translate-x-1/2 rounded-full border-[6px] border-white bg-white text-black hover:bg-white'
     >
      {loading ? <Loader2 className='animate-spin' /> : <Camera />}
     </Button>
