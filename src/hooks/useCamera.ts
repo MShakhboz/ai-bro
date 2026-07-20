@@ -15,54 +15,57 @@ export function useCamera({ onQrSuccess, onPhotoSuccess, onError }: Props) {
  const scannerRef = useRef<QrScanner | null>(null)
 
  // Track QR active state using standard state so updates trigger accurately
+ const [qrActive, setQrActive] = useState(true)
  const [ready, setReady] = useState(false)
  const [loading, setLoading] = useState(false)
 
- const handleUserMedia = useCallback(async () => {
+ const handleUserMedia = useCallback(() => {
   const video = webcamRef.current?.video
-
   if (!video || scannerRef.current) return
 
-  const initScanner = async () => {
+  setTimeout(() => {
    try {
     if (scannerRef.current) return
 
     scannerRef.current = new QrScanner(
      video,
      (result) => {
-      onQrSuccess(result.data)
+      // Look at the current real-time state variable directly
+      if (scannerRef.current && (scannerRef.current as any)._isQrActive) {
+       onQrSuccess(result.data)
+      }
      },
      {
+      preferredCamera: 'environment',
       returnDetailedScanResult: true,
       maxScansPerSecond: 10,
      },
     )
 
-    await scannerRef.current.start()
-    setReady(true)
+    // Store state data safely inside the engine scope directly
+    ;(scannerRef.current as any)._isQrActive = qrActive
 
-    console.log('QR Scanner started')
+    scannerRef.current.start()
+    setReady(true)
    } catch (e) {
     console.error('QR Scanner attach failed:', e)
-    onError('Unable to start QR scanner.')
+    onError('Unable to bind QR scanner.')
    }
-  }
+  }, 200)
+ }, [onQrSuccess, onError, qrActive])
 
-  if (video.readyState >= HTMLMediaElement.HAVE_ENOUGH_DATA) {
-   await initScanner()
-  } else {
-   video.onloadeddata = () => {
-    void initScanner()
-   }
+ const startQr = useCallback(() => {
+  setQrActive(true)
+  if (scannerRef.current) {
+   ;(scannerRef.current as any)._isQrActive = true
   }
- }, [onQrSuccess, onError])
-
- const startQr = useCallback(async () => {
-  await scannerRef.current?.start()
  }, [])
 
- const stopQr = useCallback(async () => {
-  await scannerRef.current?.stop()
+ const stopQr = useCallback(() => {
+  setQrActive(false)
+  if (scannerRef.current) {
+   ;(scannerRef.current as any)._isQrActive = false
+  }
  }, [])
 
  async function capturePhoto() {
