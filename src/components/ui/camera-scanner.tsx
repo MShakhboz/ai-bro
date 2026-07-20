@@ -111,7 +111,7 @@ export default function CameraScanner({
     {mode === 'qr' ? (
      <div className='relative h-72 w-72 rounded-3xl border-2 border-white border-dashed' />
     ) : (
-     <div className='h-72 w-72 rounded-3xl border-2 border-dashed border-white' />
+     <div />
     )}
    </div>
 
