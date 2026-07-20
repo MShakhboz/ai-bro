@@ -34,14 +34,13 @@ export function useCamera({ onQrSuccess, onPhotoSuccess, onError }: Props) {
   try {
    const stream = await navigator.mediaDevices.getUserMedia({
     video: {
-     facingMode: 'environment',
-     width: { ideal: 3840 },
-     height: { ideal: 2160 },
+     facingMode: { ideal: 'environment' },
+     width: { ideal: 1920 }, // was 3840
+     height: { ideal: 1080 }, // was 2160
     },
+    audio: false,
    })
 
-   // Effect was cleaned up (e.g. Strict Mode double-invoke) while we
-   // were awaiting getUserMedia — kill this stream, don't attach it.
    if (!mountedRef.current) {
     stream.getTracks().forEach((track) => track.stop())
     return
@@ -54,13 +53,36 @@ export function useCamera({ onQrSuccess, onPhotoSuccess, onError }: Props) {
 
    video.srcObject = stream
 
+   // Wait until metadata is available before playing.
+   await new Promise<void>((resolve) => {
+    if (video.readyState >= HTMLMediaElement.HAVE_METADATA) {
+     resolve()
+    } else {
+     video.onloadedmetadata = () => resolve()
+    }
+   })
+
    await video.play()
 
-   // If the camera track ever ends unexpectedly (e.g. another app
-   // claims the camera, or the tab loses focus on some devices),
-   // surface it instead of silently showing a black frame.
+   // Debug events
+   video.onpause = () => console.log('VIDEO PAUSED')
+   video.onwaiting = () => console.log('VIDEO WAITING')
+   video.onstalled = () => console.log('VIDEO STALLED')
+   video.onerror = (e) => console.log('VIDEO ERROR', e)
+
    trackRef.current?.addEventListener('ended', () => {
-    if (mountedRef.current) onError('Camera stream ended.')
+    console.log('TRACK ENDED')
+    if (mountedRef.current) {
+     onError('Camera stream ended.')
+    }
+   })
+
+   trackRef.current?.addEventListener('mute', () => {
+    console.log('TRACK MUTED')
+   })
+
+   trackRef.current?.addEventListener('unmute', () => {
+    console.log('TRACK UNMUTED')
    })
 
    scannerRef.current = new QrScanner(
@@ -73,22 +95,21 @@ export function useCamera({ onQrSuccess, onPhotoSuccess, onError }: Props) {
    )
 
    setReady(true)
-  } catch {
-   if (mountedRef.current) onError('Unable to access camera.')
+  } catch (e) {
+   console.error(e)
+
+   if (mountedRef.current) {
+    onError('Unable to access camera.')
+   }
   }
  }
 
  const startQr = useCallback(() => {
   scannerRef.current?.start()
-  // start() resumes the video itself, but play() is a safe no-op
-  // if it's already playing.
-  videoRef.current?.play().catch(() => {})
  }, [])
 
  const stopQr = useCallback(() => {
   scannerRef.current?.stop()
-  // QrScanner.stop() pauses the <video> element — resume it so the
-  // live feed keeps showing while we're just not scanning for QR.
   videoRef.current?.play().catch(() => {})
  }, [])
 
