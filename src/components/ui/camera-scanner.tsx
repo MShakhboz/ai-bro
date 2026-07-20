@@ -1,4 +1,3 @@
-// @/components/CameraScanner.tsx
 'use client'
 
 import { useEffect, useState } from 'react'
@@ -48,13 +47,18 @@ export default function CameraScanner({
  }, [mode, startQr, stopQr])
 
  return (
-  <div className='relative h-full bg-black'>
+  <div className='relative h-full w-full bg-black overflow-hidden'>
    <Webcam
     audio={false}
     ref={webcamRef}
     screenshotFormat='image/jpeg'
     onUserMedia={handleUserMedia}
-    onUserMediaError={() => onError('Unable to access camera.')}
+    onUserMediaError={(err) => {
+     console.error(err)
+     onError('Unable to access camera.')
+    }}
+    // Prevents QrScanner scaling configurations from resizing the final photos
+    forceScreenshotSourceSize={true}
     videoConstraints={{
      facingMode: { ideal: 'environment' },
      width: { ideal: 1920 },

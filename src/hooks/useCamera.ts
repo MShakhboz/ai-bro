@@ -1,4 +1,3 @@
-// @/hooks/useCamera.ts
 'use client'
 
 import { useCallback, useRef, useState } from 'react'
@@ -17,28 +16,33 @@ export function useCamera({ onQrSuccess, onPhotoSuccess, onError }: Props) {
  const [ready, setReady] = useState(false)
  const [loading, setLoading] = useState(false)
 
- // Triggered when react-webcam mounts and sets up its stream successfully
+ // Fired when react-webcam sets up its media stream successfully
  const handleUserMedia = useCallback(() => {
   const video = webcamRef.current?.video
   if (!video || scannerRef.current) return
 
-  try {
-   scannerRef.current = new QrScanner(
-    video,
-    (result) => onQrSuccess(result.data),
-    {
-     preferredCamera: 'environment',
-     returnDetailedScanResult: true,
-     maxScansPerSecond: 10,
-    },
-   )
+  // Give the browser 200ms to open up and stabilize the video stream track
+  setTimeout(() => {
+   try {
+    if (scannerRef.current) return
 
-   scannerRef.current.start()
-   setReady(true)
-  } catch (e) {
-   console.error('QR Scanner attach failed:', e)
-   onError('Unable to bind QR scanner.')
-  }
+    scannerRef.current = new QrScanner(
+     video,
+     (result) => onQrSuccess(result.data),
+     {
+      preferredCamera: 'environment',
+      returnDetailedScanResult: true,
+      maxScansPerSecond: 10,
+     },
+    )
+
+    scannerRef.current.start()
+    setReady(true)
+   } catch (e) {
+    console.error('QR Scanner attach failed:', e)
+    onError('Unable to bind QR scanner.')
+   }
+  }, 200)
  }, [onQrSuccess, onError])
 
  const startQr = useCallback(() => {
@@ -55,11 +59,9 @@ export function useCamera({ onQrSuccess, onPhotoSuccess, onError }: Props) {
   setLoading(true)
 
   try {
-   // getScreenshot yields a clean base64 dataUrl directly from react-webcam
    const dataUrl = webcamRef.current.getScreenshot()
    if (!dataUrl) throw new Error('Screenshot failed')
 
-   // Convert the base64 URL to a raw binary Blob object
    const response = await fetch(dataUrl)
    const blob = await response.blob()
 
