@@ -2,18 +2,18 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import QrScanner from 'qr-scanner'
-import Tesseract from 'tesseract.js'
 
 interface Props {
  onQrSuccess(value: string): void
- onMenuSuccess(text: string): void
+ onPhotoSuccess(photo: Blob, dataUrl: string): void
  onError(error: string): void
 }
 
-export function useCamera({ onQrSuccess, onMenuSuccess, onError }: Props) {
+export function useCamera({ onQrSuccess, onPhotoSuccess, onError }: Props) {
  const videoRef = useRef<HTMLVideoElement>(null)
  const streamRef = useRef<MediaStream | null>(null)
  const scannerRef = useRef<QrScanner | null>(null)
+ const trackRef = useRef<MediaStreamTrack | null>(null)
 
  const [ready, setReady] = useState(false)
  const [loading, setLoading] = useState(false)
@@ -31,12 +31,13 @@ export function useCamera({ onQrSuccess, onMenuSuccess, onError }: Props) {
    const stream = await navigator.mediaDevices.getUserMedia({
     video: {
      facingMode: 'environment',
-     width: { ideal: 1920 },
-     height: { ideal: 1080 },
+     width: { ideal: 3840 },
+     height: { ideal: 2160 },
     },
    })
 
    streamRef.current = stream
+   trackRef.current = stream.getVideoTracks()[0] ?? null
 
    const video = videoRef.current!
 
@@ -67,32 +68,54 @@ export function useCamera({ onQrSuccess, onMenuSuccess, onError }: Props) {
   scannerRef.current?.stop()
  }, [])
 
- async function captureMenu() {
+ async function capturePhoto() {
   if (!videoRef.current) return
 
   setLoading(true)
 
   try {
-   const canvas = document.createElement('canvas')
+   // Prefer ImageCapture — grabs a full-res frame straight from the
+   // sensor/pipeline, same as a native camera app, instead of
+   // whatever resolution the <video> element happens to be
+   // rendering at.
+   let blob: Blob | null = null
 
-   canvas.width = videoRef.current.videoWidth
-   canvas.height = videoRef.current.videoHeight
+   if ('ImageCapture' in window && trackRef.current) {
+    try {
+     const imageCapture = new ImageCapture(trackRef.current)
+     blob = await imageCapture.takePhoto()
+    } catch {
+     blob = null
+    }
+   }
 
-   const ctx = canvas.getContext('2d')!
+   if (!blob) {
+    const video = videoRef.current
+    const canvas = document.createElement('canvas')
 
-   ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height)
+    canvas.width = video.videoWidth
+    canvas.height = video.videoHeight
 
-   const blob = await new Promise<Blob>((resolve) =>
-    canvas.toBlob((b) => resolve(b!), 'image/jpeg', 1),
-   )
+    const ctx = canvas.getContext('2d')!
 
-   const {
-    data: { text },
-   } = await Tesseract.recognize(blob, 'eng+rus')
+    ctx.imageSmoothingEnabled = true
+    ctx.imageSmoothingQuality = 'high'
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
 
-   onMenuSuccess(text)
+    blob = await new Promise<Blob>((resolve) =>
+     canvas.toBlob((b) => resolve(b!), 'image/jpeg', 0.95),
+    )
+   }
+
+   const dataUrl = await new Promise<string>((resolve) => {
+    const reader = new FileReader()
+    reader.onloadend = () => resolve(reader.result as string)
+    reader.readAsDataURL(blob!)
+   })
+
+   onPhotoSuccess(blob, dataUrl)
   } catch {
-   onError('OCR failed.')
+   onError('Failed to capture photo.')
   }
 
   setLoading(false)
@@ -104,6 +127,7 @@ export function useCamera({ onQrSuccess, onMenuSuccess, onError }: Props) {
   streamRef.current?.getTracks().forEach((track) => track.stop())
 
   streamRef.current = null
+  trackRef.current = null
  }
 
  return {
@@ -112,7 +136,7 @@ export function useCamera({ onQrSuccess, onMenuSuccess, onError }: Props) {
   loading,
   startQr,
   stopQr,
-  captureMenu,
+  capturePhoto,
   stopCamera,
  }
 }

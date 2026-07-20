@@ -9,23 +9,23 @@ type Mode = 'qr' | 'menu'
 
 interface Props {
  onQrSuccess(value: string): void
- onMenuSuccess(text: string): void
+ onPhotoSuccess(photo: Blob, dataUrl: string): void
  onError(error: string): void
  onClose(): void
 }
 
 export default function CameraScanner({
  onQrSuccess,
- onMenuSuccess,
+ onPhotoSuccess,
  onError,
  onClose,
 }: Props) {
  const [mode, setMode] = useState<Mode>('qr')
 
- const { videoRef, ready, loading, startQr, stopQr, captureMenu, stopCamera } =
+ const { videoRef, ready, loading, startQr, stopQr, capturePhoto, stopCamera } =
   useCamera({
    onQrSuccess,
-   onMenuSuccess,
+   onPhotoSuccess,
    onError,
   })
 
@@ -106,7 +106,7 @@ export default function CameraScanner({
    {mode === 'menu' && (
     <Button
      disabled={!ready || loading}
-     onClick={captureMenu}
+     onClick={capturePhoto}
      className='absolute bottom-5 left-1/2 h-20 w-20 -translate-x-1/2 rounded-full border-[6px] border-white bg-white text-black hover:bg-white'
     >
      {loading ? <Loader2 className='animate-spin' /> : <Camera />}
