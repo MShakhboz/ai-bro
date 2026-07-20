@@ -1,6 +1,8 @@
+// @/components/CameraScanner.tsx
 'use client'
 
 import { useEffect, useState } from 'react'
+import Webcam from 'react-webcam'
 import { Button } from '@/components/ui/button'
 import { X, Camera, Loader2 } from 'lucide-react'
 import { useCamera } from '@/hooks/useCamera'
@@ -22,12 +24,20 @@ export default function CameraScanner({
 }: Props) {
  const [mode, setMode] = useState<Mode>('qr')
 
- const { videoRef, ready, loading, startQr, stopQr, capturePhoto, stopCamera } =
-  useCamera({
-   onQrSuccess,
-   onPhotoSuccess,
-   onError,
-  })
+ const {
+  webcamRef,
+  ready,
+  loading,
+  startQr,
+  stopQr,
+  capturePhoto,
+  stopCamera,
+  handleUserMedia,
+ } = useCamera({
+  onQrSuccess,
+  onPhotoSuccess,
+  onError,
+ })
 
  useEffect(() => {
   if (mode === 'qr') {
@@ -39,11 +49,17 @@ export default function CameraScanner({
 
  return (
   <div className='relative h-full bg-black'>
-   <video
-    ref={videoRef}
-    autoPlay
-    playsInline
-    muted
+   <Webcam
+    audio={false}
+    ref={webcamRef}
+    screenshotFormat='image/jpeg'
+    onUserMedia={handleUserMedia}
+    onUserMediaError={() => onError('Unable to access camera.')}
+    videoConstraints={{
+     facingMode: { ideal: 'environment' },
+     width: { ideal: 1920 },
+     height: { ideal: 1080 },
+    }}
     className='h-full w-full object-cover'
    />
 

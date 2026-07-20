@@ -1,7 +1,9 @@
+// @/hooks/useCamera.ts
 'use client'
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import QrScanner from 'qr-scanner'
+import Webcam from 'react-webcam'
 
 interface Props {
  onQrSuccess(value: string): void
@@ -10,29 +12,19 @@ interface Props {
 }
 
 export function useCamera({ onQrSuccess, onPhotoSuccess, onError }: Props) {
- const videoRef = useRef<HTMLVideoElement>(null)
+ const webcamRef = useRef<Webcam>(null)
  const scannerRef = useRef<QrScanner | null>(null)
- const mountedRef = useRef(true)
-
  const [ready, setReady] = useState(false)
  const [loading, setLoading] = useState(false)
 
- useEffect(() => {
-  mountedRef.current = true
-  startCamera()
-
-  return () => {
-   mountedRef.current = false
-   stopCamera()
-  }
- }, [])
-
- async function startCamera() {
-  if (!videoRef.current) return
+ // Triggered when react-webcam mounts and sets up its stream successfully
+ const handleUserMedia = useCallback(() => {
+  const video = webcamRef.current?.video
+  if (!video || scannerRef.current) return
 
   try {
    scannerRef.current = new QrScanner(
-    videoRef.current,
+    video,
     (result) => onQrSuccess(result.data),
     {
      preferredCamera: 'environment',
@@ -41,21 +33,13 @@ export function useCamera({ onQrSuccess, onPhotoSuccess, onError }: Props) {
     },
    )
 
-   await scannerRef.current.start()
-
-   if (!mountedRef.current) {
-    stopCamera()
-    return
-   }
-
+   scannerRef.current.start()
    setReady(true)
   } catch (e) {
-   console.error('Camera initialization failed:', e)
-   if (mountedRef.current) {
-    onError('Unable to access camera.')
-   }
+   console.error('QR Scanner attach failed:', e)
+   onError('Unable to bind QR scanner.')
   }
- }
+ }, [onQrSuccess, onError])
 
  const startQr = useCallback(() => {
   scannerRef.current?.start().catch(() => {})
@@ -66,53 +50,18 @@ export function useCamera({ onQrSuccess, onPhotoSuccess, onError }: Props) {
  }, [])
 
  async function capturePhoto() {
-  if (!videoRef.current || !ready) return
+  if (!webcamRef.current || !ready) return
 
   setLoading(true)
 
   try {
-   const video = videoRef.current
+   // getScreenshot yields a clean base64 dataUrl directly from react-webcam
+   const dataUrl = webcamRef.current.getScreenshot()
+   if (!dataUrl) throw new Error('Screenshot failed')
 
-   // Crucial: Fallback if QrScanner downsamples the canvas target dimensions
-   let width = video.videoWidth
-   let height = video.videoHeight
-
-   // If video dimensions haven't updated or are flattened by the scanner engine,
-   // pull them out of the active hardware stream track itself
-   if (!width || !height) {
-    const stream = video.srcObject as MediaStream | null
-    const track = stream?.getVideoTracks()[0]
-    const settings = track?.getSettings()
-    width = settings?.width || 1280
-    height = settings?.height || 720
-   }
-
-   const canvas = document.createElement('canvas')
-   canvas.width = width
-   canvas.height = height
-
-   const ctx = canvas.getContext('2d')
-   if (!ctx) throw new Error('Canvas context unavailable')
-
-   ctx.imageSmoothingEnabled = true
-   ctx.imageSmoothingQuality = 'high'
-
-   // Draw current visual frame buffer
-   ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
-
-   const blob = await new Promise<Blob>((resolve, reject) => {
-    canvas.toBlob(
-     (b) => (b ? resolve(b) : reject(new Error('Blob generation failed'))),
-     'image/jpeg',
-     0.95,
-    )
-   })
-
-   const dataUrl = await new Promise<string>((resolve) => {
-    const reader = new FileReader()
-    reader.onloadend = () => resolve(reader.result as string)
-    reader.readAsDataURL(blob)
-   })
+   // Convert the base64 URL to a raw binary Blob object
+   const response = await fetch(dataUrl)
+   const blob = await response.blob()
 
    onPhotoSuccess(blob, dataUrl)
   } catch (err) {
@@ -132,12 +81,13 @@ export function useCamera({ onQrSuccess, onPhotoSuccess, onError }: Props) {
  }
 
  return {
-  videoRef,
+  webcamRef,
   ready,
   loading,
   startQr,
   stopQr,
   capturePhoto,
   stopCamera,
+  handleUserMedia,
  }
 }
