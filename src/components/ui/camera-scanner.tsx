@@ -89,9 +89,7 @@ export default function CameraScanner({
 
    <div className='pointer-events-none absolute inset-0 flex items-center justify-center'>
     {mode === 'qr' ? (
-     <div className='relative h-72 w-72 rounded-3xl border-2 border-white border-dashed'>
-      <div className='absolute left-0 top-1/2 h-0.5 w-full -translate-y-1/2 animate-pulse bg-green-400' />
-     </div>
+     <div className='relative h-72 w-72 rounded-3xl border-2 border-white border-dashed' />
     ) : (
      <div className='h-72 w-72 rounded-3xl border-2 border-dashed border-white' />
     )}

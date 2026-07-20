@@ -56,7 +56,7 @@ export default function ScanPage() {
 
  return (
   <>
-   <div className='relative h-full w-full bg-[#F6F3EE] py-3'>
+   <div className='relative h-full w-full bg-[#F6F3EE]'>
     {isScanning ? (
      <CameraScanner
       onQrSuccess={(value) => {
@@ -73,7 +73,7 @@ export default function ScanPage() {
       }}
      />
     ) : (
-     <div className='flex h-full flex-col px-8'>
+     <div className='flex h-full flex-col px-8 py-3'>
       <div className='mt-5 text-center'>
        <h1 className='text-2xl font-semibold leading-tight text-[#241C17]'>
         {greeting},
