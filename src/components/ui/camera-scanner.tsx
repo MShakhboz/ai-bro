@@ -57,7 +57,7 @@ export default function CameraScanner({
     <div className='flex rounded-full bg-black/60 p-1 backdrop-blur'>
      <button
       onClick={() => setMode('qr')}
-      className={`rounded-full text-sm px-6 py-2 transition ${
+      className={`rounded-full text-sm px-6 py-2 transition whitespace-nowrap ${
        mode === 'qr' ? 'bg-white text-black' : 'text-white'
       }`}
      >
@@ -66,7 +66,7 @@ export default function CameraScanner({
 
      <button
       onClick={() => setMode('menu')}
-      className={`rounded-full text-sm px-6 py-2 transition ${
+      className={`rounded-full text-sm px-6 py-2 transition whitespace-nowrap ${
        mode === 'menu' ? 'bg-white text-black' : 'text-white'
       }`}
      >
@@ -89,19 +89,15 @@ export default function CameraScanner({
 
    <div className='pointer-events-none absolute inset-0 flex items-center justify-center'>
     {mode === 'qr' ? (
-     <div className='pointer-events-none absolute inset-0 flex items-center justify-center'>
-      <div className='relative h-72 w-72 rounded-3xl border-2 border-white'>
-       <div className='absolute left-0 top-1/2 h-0.5 w-full -translate-y-1/2 animate-pulse bg-green-400' />
-      </div>
+     <div className='relative h-72 w-72 rounded-3xl border-2 border-white border-dashed'>
+      <div className='absolute left-0 top-1/2 h-0.5 w-full -translate-y-1/2 animate-pulse bg-green-400' />
      </div>
     ) : (
-     <div className='pointer-events-none absolute inset-0 flex items-center justify-center'>
-      <div className='h-72 w-72 rounded-3xl border-2 border-dashed border-white' />
-     </div>
+     <div className='h-72 w-72 rounded-3xl border-2 border-dashed border-white' />
     )}
    </div>
 
-   <div className='absolute bottom-36 left-0 right-0 text-center text-white'>
+   <div className='absolute bottom-36 left-0 top-3 right-0 text-center text-white'>
     {mode === 'qr'
      ? 'Наведите камеру на QR-код на столе'
      : 'Сфотографируйте страницу меню'}
