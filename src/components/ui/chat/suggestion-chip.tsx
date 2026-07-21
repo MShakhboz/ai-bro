@@ -20,7 +20,7 @@ export default function SuggestionChip({
    size='sm'
    disabled={disabled}
    onClick={onClick}
-   className='h-10 rounded-full px-4 whitespace-nowrap'
+   className='h-10 rounded-full bg-white text-[#7A6A52] px-4 whitespace-nowrap'
   >
    {label}
   </Button>

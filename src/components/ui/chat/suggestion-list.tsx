@@ -17,7 +17,7 @@ export default function SuggestionList({
  }
 
  return (
-  <div className='border-t bg-background'>
+  <div className='bg-background'>
    <div className='flex gap-2 overflow-x-auto px-4 py-3 scrollbar-hide'>
     {suggestions.map((suggestion) => (
      <SuggestionChip

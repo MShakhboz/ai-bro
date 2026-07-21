@@ -30,7 +30,7 @@ export default function RootLayout({
  children: React.ReactNode
 }>) {
  return (
-  <html lang='en' className={`${plusJakartaSans.variable} h-full antialiased`}>
+  <html lang='en' className={`${plusJakartaSans.variable} h-dvh antialiased`}>
    <body className='min-h-dvh flex flex-col'>
     <MobileLayout>{children}</MobileLayout>
    </body>

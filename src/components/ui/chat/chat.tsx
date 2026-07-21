@@ -37,7 +37,7 @@ export default function Chat({
   <div className='flex h-full flex-col bg-background'>
    <ChatHeader value={tab} onValueChange={setTab} />
 
-   <ScrollArea className='flex-1'>
+   <ScrollArea className='flex-1 min-h-0'>
     <RestaurantCard restaurant={restaurant} />
     <MessageList messages={messages} isTyping={loading} />
    </ScrollArea>

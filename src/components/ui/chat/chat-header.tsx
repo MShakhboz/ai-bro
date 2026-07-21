@@ -19,14 +19,14 @@ export default function ChatHeader({
  onMore,
 }: ChatHeaderProps) {
  return (
-  <header className='sticky top-0 z-50 border-b bg-background'>
+  <header className='sticky top-0 z-50 border-b'>
    <div className='flex items-center gap-2 p-4'>
     <Button size='icon' variant='ghost' onClick={onBack}>
      <ChevronLeft className='size-5' />
     </Button>
 
     <Tabs value={value} onValueChange={onValueChange} className='flex-1'>
-     <TabsList className='grid w-full grid-cols-3'>
+     <TabsList className='grid w-full grid-cols-3 bg-[#F2EDE4]'>
       <TabsTrigger value='assistant'>AI Bro</TabsTrigger>
 
       <TabsTrigger value='menu'>Меню</TabsTrigger>
