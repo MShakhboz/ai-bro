@@ -16,6 +16,20 @@ export function useCamera({ onQrSuccess, onPhotoSuccess, onError }: Props) {
  const [ready, setReady] = useState(false)
  const [loading, setLoading] = useState(false)
 
+ function stopCamera() {
+  scannerRef.current?.destroy()
+  scannerRef.current = null
+
+  const stream = webcamRef.current?.video?.srcObject as MediaStream | null
+
+  stream?.getTracks().forEach((track) => track.stop())
+
+  if (webcamRef.current?.video) {
+   webcamRef.current.video.srcObject = null
+  }
+
+  setReady(false)
+ }
  // Triggers once the video element has successfully loaded frames
  const handleVideoLoad = useCallback(() => {
   const video = webcamRef.current?.video
@@ -30,7 +44,10 @@ export function useCamera({ onQrSuccess, onPhotoSuccess, onError }: Props) {
 
    scannerRef.current = new QrScanner(
     video,
-    (result) => onQrSuccess(result.data),
+    (result) => {
+     stopCamera()
+     onQrSuccess(result.data)
+    },
     {
      preferredCamera: 'environment',
      returnDetailedScanResult: true,
@@ -56,6 +73,7 @@ export function useCamera({ onQrSuccess, onPhotoSuccess, onError }: Props) {
   if (!webcamRef.current || !ready) return
 
   setLoading(true)
+
   try {
    const dataUrl = webcamRef.current.getScreenshot()
    if (!dataUrl) throw new Error('Screenshot came back null')
@@ -63,21 +81,18 @@ export function useCamera({ onQrSuccess, onPhotoSuccess, onError }: Props) {
    const response = await fetch(dataUrl)
    const blob = await response.blob()
 
+   stopCamera() // Stop first
+
    onPhotoSuccess(blob, dataUrl)
   } catch (err) {
    console.error('Photo capture operation failed:', err)
+
+   stopCamera()
+
    onError('Failed to capture photo.')
   } finally {
    setLoading(false)
   }
- }
-
- function stopCamera() {
-  if (scannerRef.current) {
-   scannerRef.current.destroy()
-   scannerRef.current = null
-  }
-  setReady(false)
  }
 
  return {
