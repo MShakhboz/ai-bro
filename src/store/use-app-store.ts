@@ -3,12 +3,22 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
+export type PendingScan =
+ | {
+    type: 'qr'
+    value: string
+   }
+ | {
+    type: 'image'
+    preview: string
+   }
+
 interface AppState {
  name: string
- qr: string | null
+ pendingScan: PendingScan | null
 
  setName: (name: string) => void
- setQr: (qr: string) => void
+ setPendingScan: (scan: PendingScan | null) => void
 
  reset: () => void
 }
@@ -17,20 +27,26 @@ export const useAppStore = create<AppState>()(
  persist(
   (set) => ({
    name: '',
-   qr: null,
+   pendingScan: null,
 
    setName: (name) => set({ name }),
 
-   setQr: (qr) => set({ qr }),
+   setPendingScan: (scan) =>
+    set({
+     pendingScan: scan,
+    }),
 
    reset: () =>
     set({
      name: '',
-     qr: null,
+     pendingScan: null,
     }),
   }),
   {
    name: 'ai-bro',
+   partialize: (state) => ({
+    name: state.name,
+   }),
   },
  ),
 )

@@ -13,6 +13,7 @@ export interface Message {
  role: MessageRole
  content: string
  createdAt: string
+ image?: string
 }
 
 export interface Suggestion {

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 import CameraScanner from '@/components/ui/camera-scanner'
 import {
@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/alert-dialog'
 import { Chat, Restaurant, Suggestion } from '@/components/ui/chat'
 import { type Message as MessageType } from '@/components/ui/chat/types'
+import { useAppStore } from '@/store/use-app-store'
 
 const restaurant: Restaurant = {
  id: '1',
@@ -47,7 +48,7 @@ export default function ChatPage() {
    createdAt: getTime(),
   },
  ])
-
+ const { pendingScan, setPendingScan } = useAppStore()
  const [isScanning, setIsScanning] = useState(false)
  const [cameraError, setCameraError] = useState<string | null>(null)
 
@@ -113,9 +114,6 @@ export default function ChatPage() {
    },
   ])
 
-  // TODO: Upload to your backend
-  console.log('Photo:', photo)
-
   // Fake AI response
   setTimeout(() => {
    setMessages((prev) => [
@@ -131,11 +129,31 @@ export default function ChatPage() {
  }
 
  function handleCameraError(error: string) {
-  console.error(error)
-
   setIsScanning(false)
   setCameraError(error)
  }
+
+ useEffect(() => {
+  if (!pendingScan) return
+
+  const scan = pendingScan
+
+  // Clear immediately
+  setPendingScan(null)
+
+  if (scan.type === 'image') {
+   setMessages((prev) => [
+    ...prev,
+    {
+     id: crypto.randomUUID(),
+     role: 'user',
+     image: scan.preview,
+     content: '',
+     createdAt: getTime(),
+    },
+   ])
+  }
+ }, [])
 
  return (
   <div className='flex h-full flex-col relative'>

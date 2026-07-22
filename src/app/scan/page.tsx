@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react'
 import { Camera } from 'lucide-react'
 
 import CameraScanner from '@/components/ui/camera-scanner'
-
+import { useRouter } from 'next/navigation'
 import { useAppStore } from '@/store/use-app-store'
 
 import { Button } from '@/components/ui/button'
@@ -18,8 +18,8 @@ import {
 } from '@/components/ui/dialog'
 
 export default function ScanPage() {
- const { name } = useAppStore()
-
+ const { name, setPendingScan } = useAppStore()
+ const router = useRouter()
  const [isScanning, setIsScanning] = useState(false)
 
  const [dialogOpen, setDialogOpen] = useState(false)
@@ -60,10 +60,20 @@ export default function ScanPage() {
     {isScanning ? (
      <CameraScanner
       onQrSuccess={(value) => {
-       showDialog('QR Code', value)
+       setPendingScan({
+        type: 'qr',
+        value,
+       })
+
+       router.push('/chat')
       }}
       onPhotoSuccess={(_photo, dataUrl) => {
-       showDialog('Фото меню', '', dataUrl)
+       setPendingScan({
+        type: 'image',
+        preview: dataUrl,
+       })
+
+       router.push('/chat')
       }}
       onError={(error) => {
        showDialog('Camera Error', error)

@@ -23,9 +23,19 @@ export default function Message({ message }: MessageProps) {
       : 'border-primary bg-primary text-primary-foreground',
     )}
    >
-    <p className='whitespace-pre-wrap text-[15px] leading-6'>
-     {message.content}
-    </p>
+    {message.image && (
+     <img
+      src={message.image}
+      alt='Uploaded'
+      className='mb-3 max-h-80 w-full rounded-2xl object-cover'
+     />
+    )}
+
+    {message.content && (
+     <p className='whitespace-pre-wrap text-[15px] leading-6'>
+      {message.content}
+     </p>
+    )}
 
     <p
      className={cn(
