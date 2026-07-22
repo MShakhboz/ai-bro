@@ -1,8 +1,18 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { useState } from 'react'
 
-import { Chat, Message, Restaurant, Suggestion } from '@/components/ui/chat'
+import CameraScanner from '@/components/ui/camera-scanner'
+import {
+ AlertDialog,
+ AlertDialogAction,
+ AlertDialogContent,
+ AlertDialogDescription,
+ AlertDialogFooter,
+ AlertDialogHeader,
+ AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
+import { Chat, Restaurant, Suggestion } from '@/components/ui/chat'
 import { type Message as MessageType } from '@/components/ui/chat/types'
 
 const restaurant: Restaurant = {
@@ -10,7 +20,7 @@ const restaurant: Restaurant = {
  name: 'Semplice',
  cuisine: 'Итальянский',
  table: '7',
- image: '/restaurant.jpg', // replace with your image
+ image: '/restaurant.jpg',
 }
 
 const suggestions: Suggestion[] = [
@@ -29,8 +39,6 @@ const suggestions: Suggestion[] = [
 ]
 
 export default function ChatPage() {
- const fileInputRef = useRef<HTMLInputElement>(null)
-
  const [messages, setMessages] = useState<MessageType[]>([
   {
    id: crypto.randomUUID(),
@@ -39,6 +47,9 @@ export default function ChatPage() {
    createdAt: getTime(),
   },
  ])
+
+ const [isScanning, setIsScanning] = useState(false)
+ const [cameraError, setCameraError] = useState<string | null>(null)
 
  function getTime() {
   return new Date().toLocaleTimeString([], {
@@ -79,26 +90,31 @@ export default function ChatPage() {
  }
 
  function handleCameraClick() {
-  fileInputRef.current?.click()
+  setIsScanning(true)
  }
 
- function handlePhoto(event: React.ChangeEvent<HTMLInputElement>) {
-  const file = event.target.files?.[0]
+ function handleQrSuccess(value: string) {
+  setIsScanning(false)
 
-  if (!file) return
+  sendMessage(value)
+ }
 
-  const image = URL.createObjectURL(file)
+ async function handlePhotoSuccess(photo: File, dataUrl: string) {
+  setIsScanning(false)
 
   setMessages((prev) => [
    ...prev,
    {
     id: crypto.randomUUID(),
     role: 'user',
-    image,
+    image: dataUrl,
+    content: 'Photo',
     createdAt: getTime(),
-    content: 'Фото отправлено',
    },
   ])
+
+  // TODO: Upload to your backend
+  console.log('Photo:', photo)
 
   // Fake AI response
   setTimeout(() => {
@@ -112,20 +128,27 @@ export default function ChatPage() {
     },
    ])
   }, 800)
+ }
 
-  event.target.value = ''
+ function handleCameraError(error: string) {
+  console.error(error)
+
+  setIsScanning(false)
+  setCameraError(error)
  }
 
  return (
-  <>
-   {/* <input
-    ref={fileInputRef}
-    hidden
-    type='file'
-    accept='image/*'
-    capture='environment'
-    onChange={handlePhoto}
-   /> */}
+  <div className='flex h-full flex-col relative'>
+   {isScanning && (
+    <div className='absolute inset-0 z-50 flex items-center justify-center bg-black/50'>
+     <CameraScanner
+      onQrSuccess={handleQrSuccess}
+      onPhotoSuccess={handlePhotoSuccess}
+      onError={handleCameraError}
+      onClose={() => setIsScanning(false)}
+     />
+    </div>
+   )}
 
    <div className='flex h-full flex-col'>
     <Chat
@@ -138,6 +161,27 @@ export default function ChatPage() {
      onCameraClick={handleCameraClick}
     />
    </div>
-  </>
+
+   <AlertDialog
+    open={!!cameraError}
+    onOpenChange={(open) => {
+     if (!open) setCameraError(null)
+    }}
+   >
+    <AlertDialogContent>
+     <AlertDialogHeader>
+      <AlertDialogTitle>Camera Error</AlertDialogTitle>
+
+      <AlertDialogDescription>{cameraError}</AlertDialogDescription>
+     </AlertDialogHeader>
+
+     <AlertDialogFooter>
+      <AlertDialogAction onClick={() => setCameraError(null)}>
+       OK
+      </AlertDialogAction>
+     </AlertDialogFooter>
+    </AlertDialogContent>
+   </AlertDialog>
+  </div>
  )
 }

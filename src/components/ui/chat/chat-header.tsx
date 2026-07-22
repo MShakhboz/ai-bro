@@ -19,7 +19,7 @@ export default function ChatHeader({
  onMore,
 }: ChatHeaderProps) {
  return (
-  <header className='sticky top-0 z-50 border-b'>
+  <header className='sticky top-0 z-40 border-b'>
    <div className='flex items-center gap-2 p-4'>
     <Button size='icon' variant='ghost' onClick={onBack}>
      <ChevronLeft className='size-5' />
