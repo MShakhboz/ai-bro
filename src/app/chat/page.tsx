@@ -141,6 +141,11 @@ export default function ChatPage() {
   // Clear immediately
   setPendingScan(null)
 
+  if (scan.type === 'qr') {
+   sendMessage(scan.value)
+   return
+  }
+
   if (scan.type === 'image') {
    setMessages((prev) => [
     ...prev,
@@ -153,7 +158,7 @@ export default function ChatPage() {
     },
    ])
   }
- }, [])
+ }, [pendingScan, setPendingScan])
 
  return (
   <div className='flex h-full flex-col relative'>
