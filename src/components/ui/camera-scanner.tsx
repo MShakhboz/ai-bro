@@ -4,13 +4,13 @@ import { useState, useRef, useEffect } from 'react'
 import Webcam from 'react-webcam'
 import { Button } from '@/components/ui/button'
 import { X, Camera, Loader2 } from 'lucide-react'
-import { useCamera } from '@/hooks/useCamera'
+import { useCamera } from '@/shared/hooks/useCamera'
 
 type Mode = 'qr' | 'menu'
 
 interface Props {
  onQrSuccess(value: string): void
- onPhotoSuccess(photo: Blob, dataUrl: string): void
+ onPhotoSuccess(photo: File, dataUrl: string): void
  onError(error: string): void
  onClose(): void
 }

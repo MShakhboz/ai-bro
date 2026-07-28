@@ -1,8 +1,8 @@
 import type { Metadata } from 'next'
-import { Geist, Geist_Mono } from 'next/font/google'
+import { Geist, Geist_Mono, Plus_Jakarta_Sans } from 'next/font/google'
 import './globals.css'
 import MobileLayout from '@/components/ui/mobile-layout'
-import { Plus_Jakarta_Sans } from 'next/font/google'
+import { QueryProvider } from '@/providers/query-provider'
 
 const geistSans = Geist({
  variable: '--font-geist-sans',
@@ -31,8 +31,10 @@ export default function RootLayout({
 }>) {
  return (
   <html lang='en' className={`${plusJakartaSans.variable} h-dvh antialiased`}>
-   <body className='min-h-dvh flex flex-col'>
-    <MobileLayout>{children}</MobileLayout>
+   <body className='flex min-h-dvh flex-col'>
+    <QueryProvider>
+     <MobileLayout>{children}</MobileLayout>
+    </QueryProvider>
    </body>
   </html>
  )

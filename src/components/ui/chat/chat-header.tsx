@@ -1,6 +1,6 @@
 'use client'
 
-import { EllipsisVertical, ChevronLeft } from 'lucide-react'
+import { ChevronLeft, EllipsisVertical } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -19,7 +19,7 @@ export default function ChatHeader({
  onMore,
 }: ChatHeaderProps) {
  return (
-  <header className='sticky top-0 z-40 border-b'>
+  <header className='sticky top-0 z-40 border-b bg-background'>
    <div className='flex items-center gap-2 p-4'>
     <Button size='icon' variant='ghost' onClick={onBack}>
      <ChevronLeft className='size-5' />

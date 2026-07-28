@@ -4,11 +4,11 @@ import { useEffect, useRef } from 'react'
 
 import Message from './message'
 
-import { Message as MessageType } from './types'
 import EmptyState from './empty-state'
+import { ChatMessage } from '@/features/chatmenu/types/chatmenu.types'
 
 interface MessageListProps {
- messages: MessageType[]
+ messages: ChatMessage[]
  isTyping?: boolean
 }
 
@@ -20,7 +20,7 @@ export default function MessageList({
 
  useEffect(() => {
   bottomRef.current?.scrollIntoView({
-   behavior: 'smooth',
+   behavior: 'instant',
    block: 'end',
   })
  }, [messages, isTyping])
