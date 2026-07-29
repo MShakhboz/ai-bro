@@ -11,7 +11,6 @@ export function useCreatePhotoSession() {
   onSuccess: (data) => {
    queryClient.setQueryData(scanKeys.currentSession(), {
     sessionId: data.session_id,
-    order: 1, // next photo's order, starts at 1
    })
   },
  })

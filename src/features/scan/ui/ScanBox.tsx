@@ -63,8 +63,8 @@ export default function ScanBox() {
 
  const handleQrSuccess = async (value: string) => {
   try {
-   const result = await scanQr(value)
-   setPendingScan({ type: 'qr', value })
+   await scanQr(value)
+   //  setPendingScan({ type: 'qr', value })
    router.push(`/restaurants`)
   } catch {
    showDialog(
@@ -75,10 +75,9 @@ export default function ScanBox() {
  }
 
  const handlePhotoSuccess = async (photo: File, dataUrl: string) => {
-  console.log('photo', photo)
   try {
    await submitPhotoScan(photo)
-   setPendingScan({ type: 'image', preview: dataUrl })
+   //  setPendingScan({ type: 'image', preview: dataUrl })
    router.push(`/restaurants`)
   } catch (err) {
    const message =
@@ -92,8 +91,6 @@ export default function ScanBox() {
  return (
   <>
    <div className='relative h-full w-full bg-[#F6F3EE]'>
-    <div>latitude:{location?.latitude}</div>
-    <div>longitude:{location?.longitude}</div>
     {isScanning ? (
      <CameraScanner
       onQrSuccess={handleQrSuccess}

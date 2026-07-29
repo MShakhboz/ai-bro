@@ -50,8 +50,11 @@ export const scanApi = {
   await api.delete(`/scan/photo/sessions/${sessionId}/photos/${photoId}`)
  },
 
- completeSession: async (sessionId: string) => {
-  const { data } = await api.post(`/scan/photo/sessions/${sessionId}/complete`)
+ completeSession: async (sessionId: string, expected_count: number) => {
+  const { data } = await api.post(
+   `/scan/photo/sessions/${sessionId}/complete`,
+   { expected_count },
+  )
   return data
  },
 

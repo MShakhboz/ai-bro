@@ -1,13 +1,12 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { scanApi } from '../api/scan.api'
 import { scanKeys } from '../api/scan.keys'
-import { useAppStore } from '@/store/use-app-store'
 
 export function useUploadPhoto() {
  const queryClient = useQueryClient()
 
  return useMutation({
-  mutationFn: ({
+  mutationFn: async ({
    sessionId,
    file,
    order,
@@ -15,7 +14,19 @@ export function useUploadPhoto() {
    sessionId: string
    file: File
    order: number
-  }) => scanApi.uploadPhoto({ sessionId, file, order }),
+  }) => {
+   // Upload photo first
+   const result = await scanApi.uploadPhoto({
+    sessionId,
+    file,
+    order,
+   })
+
+   // Complete session after successful upload
+   await scanApi.completeSession(sessionId, order)
+
+   return result
+  },
 
   onSuccess: (_, variables) => {
    queryClient.invalidateQueries({

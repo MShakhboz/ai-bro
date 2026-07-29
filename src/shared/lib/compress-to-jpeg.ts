@@ -6,12 +6,21 @@ export async function compressToJpeg(
  blob: Blob,
  maxSize = MAX_FILE_SIZE,
 ): Promise<File> {
+ const isJpeg = blob.type === 'image/jpeg' || blob.type === 'image/jpg'
+
+ // Already JPEG and within the limit — no processing needed
+ if (isJpeg && blob.size <= maxSize) {
+  return new File([blob], `menu-${Date.now()}.jpg`, {
+   type: 'image/jpeg',
+   lastModified: Date.now(),
+  })
+ }
+
  const bitmap = await createImageBitmap(blob)
 
  let width = bitmap.width
  let height = bitmap.height
 
- // Start with a reasonable resolution
  const maxDimension = 1920
 
  if (width > maxDimension || height > maxDimension) {
@@ -35,7 +44,6 @@ export async function compressToJpeg(
 
   ctx.drawImage(bitmap, 0, 0, width, height)
 
-  // Gradually reduce quality
   const quality = Math.max(0.4, 0.9 - attempt * 0.06)
 
   const result = await new Promise<Blob | null>((resolve) => {
@@ -51,7 +59,6 @@ export async function compressToJpeg(
    })
   }
 
-  // If quality isn't enough, also reduce dimensions
   width = Math.round(width * 0.85)
   height = Math.round(height * 0.85)
  }
