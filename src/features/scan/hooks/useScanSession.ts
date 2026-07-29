@@ -2,18 +2,20 @@ import { useQueryClient } from '@tanstack/react-query'
 import { useCurrentPhotoSession } from './useCurrentPhotoSession'
 import { useCreatePhotoSession } from './useCreatePhotoSession'
 import { useUploadPhoto } from './useUploadPhoto'
+import { useCompleteSession } from './useCompleteSession'
+import { useScanQr } from './useScanQr'
 import { CreatePhotoSession } from '../types/scan.type'
 import { validateMenuPhoto } from '@/shared/lib/validate-menu-photo'
 import { scanKeys } from '../api/scan.keys'
-import { useCompleteSession } from './useCompleteSession'
 
-export function usePhotoScanSession(sessionProps: CreatePhotoSession) {
+export function useScanSession(sessionProps: CreatePhotoSession) {
  const queryClient = useQueryClient()
  const { data: currentSession } = useCurrentPhotoSession()
 
  const { mutateAsync: createPhotoSession } = useCreatePhotoSession()
  const { mutateAsync: uploadPhoto } = useUploadPhoto()
  const { mutateAsync: completeSession } = useCompleteSession()
+ const { mutateAsync: scanQr } = useScanQr()
 
  const addPhoto = async (file: File) => {
   const validationError = validateMenuPhoto(file)
@@ -30,6 +32,8 @@ export function usePhotoScanSession(sessionProps: CreatePhotoSession) {
    sessionId = created.session_id
   }
 
+  console.log('file', file)
+
   const result = await uploadPhoto({
    sessionId,
    file,
@@ -42,6 +46,10 @@ export function usePhotoScanSession(sessionProps: CreatePhotoSession) {
   })
 
   return result
+ }
+
+ const scanQrCode = async (value: string) => {
+  return scanQr({ url: value, ...sessionProps })
  }
 
  const finish = async () => {
@@ -63,6 +71,7 @@ export function usePhotoScanSession(sessionProps: CreatePhotoSession) {
  return {
   sessionId: currentSession?.sessionId ?? null,
   addPhoto,
+  scanQr: scanQrCode,
   finish,
   reset,
  }

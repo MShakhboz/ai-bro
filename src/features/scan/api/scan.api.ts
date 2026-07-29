@@ -33,16 +33,16 @@ export const scanApi = {
   file: File
   order?: number
  }) => {
+  const formData = new FormData()
+
+  formData.append('file', file)
+  formData.append('order', String(order))
+
   const { data } = await api.post<UploadPhotoResponse>(
    `/scan/photo/sessions/${sessionId}/photos`,
-   file, // raw binary body — only the file bytes
-   {
-    params: { order }, // → ?order=1
-    headers: {
-     'Content-Type': file.type || 'image/jpeg',
-    },
-   },
+   formData,
   )
+
   return data
  },
 

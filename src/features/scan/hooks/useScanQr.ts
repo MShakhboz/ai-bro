@@ -7,12 +7,24 @@ import { useAppStore } from '@/store/use-app-store'
 
 export function useScanQr() {
  const queryClient = useQueryClient()
- const { name, setSession } = useAppStore()
+
  return useMutation({
   mutationFn: scanApi.scanQr,
+
   onSuccess: ({ session_id }: QRScanResponse) => {
-   queryClient.invalidateQueries({ queryKey: scanKeys.session(session_id) })
-   setSession(session_id)
+   const currentSession = queryClient.getQueryData<{
+    sessionId: string
+    order: number
+   }>(scanKeys.currentSession())
+
+   queryClient.setQueryData(scanKeys.currentSession(), {
+    sessionId: session_id,
+    order: currentSession?.order ?? 1,
+   })
+
+   queryClient.invalidateQueries({
+    queryKey: scanKeys.sessionStatus(session_id),
+   })
   },
  })
 }

@@ -11,6 +11,8 @@ import { useSelectRestaurant } from '../hooks/useSelectRestaurant'
 import { useCurrentPhotoSession } from '@/features/scan/hooks/useCurrentPhotoSession'
 import { useCreatePhotoSession } from '@/features/scan/hooks/useCreatePhotoSession'
 import { useScanQr } from '@/features/scan/hooks/useScanQr'
+import { useSessionStatus } from '@/features/scan/hooks/useSessionStatus'
+import { RestaurantCandidate } from '@/features/scan/types/scan.type'
 
 export default function RestaurantsList() {
  const {
@@ -23,14 +25,10 @@ export default function RestaurantsList() {
  } = useRestaurants()
  const router = useRouter()
  const setVisit = useAppStore((state) => state.setVisit)
- const sessionId = useAppStore((state) => state.sessionId)
  const loadMoreRef = useRef<HTMLDivElement>(null)
  const { data: session } = useCurrentPhotoSession()
- const { data: photoSession } = useCreatePhotoSession()
- const { data: qrSession } = useScanQr()
+ const sessionId = session?.sessionId ?? null
  const { mutate: selectRestaurant } = useSelectRestaurant(sessionId)
-
- console.log(photoSession?.session_id, qrSession?.session_id)
 
  useEffect(() => {
   const el = loadMoreRef.current
@@ -59,7 +57,13 @@ export default function RestaurantsList() {
    year: 'numeric',
   })
 
- const handleSelect = (visit: Restaurant) => {
+ const {
+  data: sessionStatus,
+  isPending: isSessionStatusPending,
+  isError: isSessionStatusError,
+ } = useSessionStatus(sessionId)
+
+ const handleSelect = (visit: RestaurantCandidate) => {
   router.push(`/chat`)
   selectRestaurant(
    {
@@ -79,7 +83,7 @@ export default function RestaurantsList() {
     },
    },
   )
-  setVisit(visit.id, visit.restaurant_name)
+  // setVisit(visit.id, visit.restaurant_name)
  }
 
  const formatAmount = (amount: number) =>
@@ -101,7 +105,10 @@ export default function RestaurantsList() {
   )
  }
 
- if (isPending) {
+ if (
+  isSessionStatusPending ||
+  ['pending', 'processing'].includes(sessionStatus?.status ?? '')
+ ) {
   return <RestaurantsLoading />
  }
 
@@ -115,7 +122,7 @@ export default function RestaurantsList() {
   )
  }
 
- if (visits.length === 0) {
+ if (sessionStatus?.candidates && sessionStatus?.candidates?.length === 0) {
   return (
    <div className='flex flex-col items-center gap-2 p-8 text-center'>
     <p className='text-sm text-gray-500'>Пока нет визитов</p>
@@ -139,9 +146,9 @@ export default function RestaurantsList() {
     '
    >
     <div className='flex flex-col gap-3'>
-     {visits.map((visit) => (
+     {sessionStatus?.candidates?.map((visit) => (
       <button
-       key={visit.id}
+       key={visit.place_id}
        onClick={() => handleSelect(visit)}
        className='
             flex
@@ -160,22 +167,16 @@ export default function RestaurantsList() {
       >
        <div className='flex items-start justify-between gap-3'>
         <div className='min-w-0'>
-         <h3 className='truncate font-medium text-gray-900'>
-          {visit.restaurant_name}
-         </h3>
-
-         <p className='text-xs text-gray-400'>
-          {formatDate(visit.visit_date)}
-          {visit.table_number != null && ` · Стол ${visit.table_number}`}
-         </p>
+         <h3 className='truncate font-medium text-gray-900'>{visit.name}</h3>
+         <p className='text-xs text-gray-400'>{visit.address}</p>
         </div>
 
-        <span className='shrink-0 whitespace-nowrap text-sm font-semibold text-gray-900'>
+        {/* <span className='shrink-0 whitespace-nowrap text-sm font-semibold text-gray-900'>
          {formatAmount(visit.total_amount)} ₽
-        </span>
+        </span> */}
        </div>
 
-       {renderPreview(visit)}
+       {/* {renderPreview(visit)} */}
       </button>
      ))}
 

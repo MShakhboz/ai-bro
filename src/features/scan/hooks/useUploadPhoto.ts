@@ -5,7 +5,6 @@ import { useAppStore } from '@/store/use-app-store'
 
 export function useUploadPhoto() {
  const queryClient = useQueryClient()
- const { setSession } = useAppStore()
 
  return useMutation({
   mutationFn: ({
@@ -23,7 +22,9 @@ export function useUploadPhoto() {
     queryKey: scanKeys.session(variables.sessionId),
    })
 
-   setSession(variables.sessionId)
+   queryClient.invalidateQueries({
+    queryKey: scanKeys.sessionStatus(variables.sessionId),
+   })
   },
  })
 }

@@ -25,14 +25,26 @@ export type UploadPhotoResponse = {
 }
 
 export type ScanSessionStatus =
- | 'pending'
  | 'processing'
- | 'completed'
+ | 'awaiting_restaurant'
+ | 'done'
  | 'failed'
+ | 'pending'
+
+export type RestaurantCandidate = {
+ place_id: string
+ name: string
+ address: string
+ latitude: number
+ longitude: number
+}
 
 export type SessionStatusResponse = {
  status: ScanSessionStatus
- // likely includes extracted menu data once completed — fill in
+ candidates: RestaurantCandidate[]
+ guessed_restaurant_name: string | null
+ fallback_prompt: string | null
+ restaurant_id: number
 }
 
 export type SelectRestaurantPayload = {

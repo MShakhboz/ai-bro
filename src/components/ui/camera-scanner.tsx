@@ -3,8 +3,9 @@
 import { useState, useRef, useEffect } from 'react'
 import Webcam from 'react-webcam'
 import { Button } from '@/components/ui/button'
-import { X, Camera, Loader2 } from 'lucide-react'
+import { X, Camera, Image as ImageIcon, Loader2 } from 'lucide-react'
 import { useCamera } from '@/shared/hooks/useCamera'
+import { compressToJpeg } from '@/shared/lib/compress-to-jpeg'
 
 type Mode = 'qr' | 'menu'
 
@@ -23,6 +24,8 @@ export default function CameraScanner({
 }: Props) {
  const [mode, setMode] = useState<Mode>('qr')
 
+ const fileInputRef = useRef<HTMLInputElement>(null)
+
  // Keeps mutable track of what tab the user is seeing in real-time
  const activeModeRef = useRef<Mode>('qr')
 
@@ -39,7 +42,6 @@ export default function CameraScanner({
   handleVideoLoad,
  } = useCamera({
   onQrSuccess: (value) => {
-   // The background engine scans continuously, but we block processing unless the active tab is 'qr'
    if (activeModeRef.current === 'qr') {
     onQrSuccess(value)
    }
@@ -48,8 +50,44 @@ export default function CameraScanner({
   onError,
  })
 
+ const handleGalleryClick = () => {
+  fileInputRef.current?.click()
+ }
+
+ const handleGalleryChange = async (
+  event: React.ChangeEvent<HTMLInputElement>,
+ ) => {
+  const file = event.target.files?.[0]
+
+  // Reset so the same image can be selected again
+  event.target.value = ''
+
+  if (!file) return
+
+  if (!file.type.startsWith('image/')) {
+   onError('Выберите изображение.')
+   return
+  }
+
+  try {
+   const compressedFile = await compressToJpeg(file)
+
+   const previewUrl = URL.createObjectURL(compressedFile)
+
+   stopCamera()
+   onPhotoSuccess(compressedFile, previewUrl)
+  } catch (error) {
+   console.error('Gallery image compression failed:', error)
+   onError(
+    error instanceof Error
+     ? error.message
+     : 'Не удалось обработать изображение.',
+   )
+  }
+ }
+
  return (
-  <div className='relative h-full w-full bg-black overflow-hidden'>
+  <div className='relative h-full w-full overflow-hidden bg-black'>
    <Webcam
     audio={false}
     ref={webcamRef}
@@ -59,11 +97,10 @@ export default function CameraScanner({
      console.error('Webcam media tracking failure:', err)
      onError('Unable to access camera.')
     }}
-    // Pass HTML video properties directly as top-level props
     onCanPlay={handleVideoLoad}
-    playsInline={true}
-    muted={true}
-    forceScreenshotSourceSize={true}
+    playsInline
+    muted
+    forceScreenshotSourceSize
     videoConstraints={{
      facingMode: { ideal: 'environment' },
      width: { ideal: 1280 },
@@ -78,11 +115,20 @@ export default function CameraScanner({
     </div>
    )}
 
-   <div className='absolute top-5 left-1/2 z-50 -translate-x-1/2'>
+   {/* Gallery input */}
+   <input
+    ref={fileInputRef}
+    type='file'
+    accept='image/*'
+    className='hidden'
+    onChange={handleGalleryChange}
+   />
+
+   <div className='absolute left-1/2 top-5 z-50 -translate-x-1/2'>
     <div className='flex rounded-full bg-black/60 p-1 backdrop-blur'>
      <button
       onClick={() => setMode('qr')}
-      className={`rounded-full text-sm px-6 py-2 transition whitespace-nowrap ${
+      className={`whitespace-nowrap rounded-full px-6 py-2 text-sm transition ${
        mode === 'qr' ? 'bg-white text-black' : 'text-white'
       }`}
      >
@@ -91,7 +137,7 @@ export default function CameraScanner({
 
      <button
       onClick={() => setMode('menu')}
-      className={`rounded-full text-sm px-6 py-2 transition whitespace-nowrap ${
+      className={`whitespace-nowrap rounded-full px-6 py-2 text-sm transition ${
        mode === 'menu' ? 'bg-white text-black' : 'text-white'
       }`}
      >
@@ -113,7 +159,7 @@ export default function CameraScanner({
    </Button>
 
    <div className='pointer-events-none absolute inset-0 flex items-center justify-center'>
-    {mode === 'qr' ? (
+    {mode === 'qr' && (
      <div className='relative h-72 w-72'>
       <svg
        className='absolute inset-0 h-full w-full'
@@ -128,12 +174,10 @@ export default function CameraScanner({
         fill='none'
         stroke='white'
         strokeWidth='2'
-        strokeDasharray='16 32' // very large gap
+        strokeDasharray='16 32'
        />
       </svg>
      </div>
-    ) : (
-     <div />
     )}
    </div>
 
@@ -144,13 +188,32 @@ export default function CameraScanner({
    </div>
 
    {mode === 'menu' && (
-    <Button
-     disabled={!ready || loading}
-     onClick={capturePhoto}
-     className='absolute bottom-5 left-1/2 h-20 w-20 -translate-x-1/2 rounded-full border-[6px] border-white bg-white text-black hover:bg-white'
-    >
-     {loading ? <Loader2 className='animate-spin' /> : <Camera />}
-    </Button>
+    <div className='absolute bottom-5 left-1/2 z-50 flex -translate-x-1/2 items-center gap-5'>
+     {/* Gallery */}
+     <Button
+      type='button'
+      size='icon'
+      variant='secondary'
+      disabled={loading}
+      onClick={handleGalleryClick}
+      className='h-12 w-12 rounded-full'
+     >
+      <ImageIcon />
+     </Button>
+
+     {/* Camera */}
+     <Button
+      type='button'
+      disabled={!ready || loading}
+      onClick={capturePhoto}
+      className='h-20 w-20 rounded-full border-[6px] border-white bg-white text-black hover:bg-white'
+     >
+      {loading ? <Loader2 className='animate-spin' /> : <Camera />}
+     </Button>
+
+     {/* Keeps camera button centered */}
+     <div className='h-12 w-12' />
+    </div>
    )}
   </div>
  )

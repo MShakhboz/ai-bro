@@ -17,8 +17,7 @@ import {
  DialogTitle,
 } from '@/components/ui/dialog'
 
-import { useScanQr } from '@/features/scan/hooks/useScanQr'
-import { usePhotoScanSession } from '../hooks/usePhotoScanSession'
+import { useScanSession } from '../hooks/useScanSession'
 import { useGeolocation } from '@/shared/hooks/useGeolocation'
 import Image from 'next/image'
 
@@ -37,19 +36,17 @@ export default function ScanBox() {
   description: '',
  })
 
- const { mutateAsync: scanQr, isPending: isQrPending } = useScanQr()
  const { location } = useGeolocation()
 
  const {
   addPhoto: submitPhotoScan,
+  scanQr,
   finish,
   reset,
- } = usePhotoScanSession({
+ } = useScanSession({
   latitude: location?.latitude ?? NaN,
   longitude: location?.longitude ?? NaN,
  })
-
- const isProcessing = isQrPending
 
  const greeting = useMemo(() => {
   const hour = new Date().getHours()
@@ -66,11 +63,7 @@ export default function ScanBox() {
 
  const handleQrSuccess = async (value: string) => {
   try {
-   const result = await scanQr({
-    url: value,
-    latitude: location?.latitude ?? NaN,
-    longitude: location?.longitude ?? NaN,
-   })
+   const result = await scanQr(value)
    setPendingScan({ type: 'qr', value })
    router.push(`/restaurants`)
   } catch {
@@ -82,6 +75,7 @@ export default function ScanBox() {
  }
 
  const handlePhotoSuccess = async (photo: File, dataUrl: string) => {
+  console.log('photo', photo)
   try {
    await submitPhotoScan(photo)
    setPendingScan({ type: 'image', preview: dataUrl })
@@ -98,6 +92,8 @@ export default function ScanBox() {
  return (
   <>
    <div className='relative h-full w-full bg-[#F6F3EE]'>
+    <div>latitude:{location?.latitude}</div>
+    <div>longitude:{location?.longitude}</div>
     {isScanning ? (
      <CameraScanner
       onQrSuccess={handleQrSuccess}
@@ -143,11 +139,11 @@ export default function ScanBox() {
 
       <Button
        onClick={() => setIsScanning(true)}
-       disabled={isProcessing}
+       disabled={false}
        className='mt-auto h-14 rounded-full bg-[#C87437] text-base hover:bg-[#B96530]'
       >
        <Camera className='mr-2 h-5 w-5' />
-       {isProcessing ? 'Обработка...' : 'Открыть камеру'}
+       {false ? 'Обработка...' : 'Открыть камеру'}
       </Button>
      </div>
     )}
