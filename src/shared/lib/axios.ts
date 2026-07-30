@@ -11,8 +11,12 @@ api.interceptors.request.use(
   // Only access token storage in browser/client environment
   if (typeof window !== 'undefined') {
    const token = useAppStore.getState().me?.token
+   const deviceId = useAppStore.getState().me?.device_id
    if (token) {
     config.headers.Authorization = `Bearer ${token}`
+   }
+   if (deviceId) {
+    config.headers['X-Device-Id'] = deviceId
    }
   }
   return config

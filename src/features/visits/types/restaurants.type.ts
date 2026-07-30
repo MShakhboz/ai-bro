@@ -20,8 +20,8 @@ export interface RestaurantsResponse {
 // src/features/scan/types/scan.types.ts
 
 export type SelectRestaurantByPlacePayload = {
-  place_id: string
-  name: string
+  place_id: string | number
+  name?: string
   address?: string
   latitude?: number
   longitude?: number

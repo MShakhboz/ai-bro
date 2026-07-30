@@ -2,16 +2,15 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { scanApi } from '../api/scan.api'
 import { scanKeys } from '../api/scan.keys'
+import { useAppStore } from '@/store/use-app-store'
 
 export function useCreatePhotoSession() {
- const queryClient = useQueryClient()
+  const { setSession } = useAppStore()
 
- return useMutation({
-  mutationFn: scanApi.createPhotoSession,
-  onSuccess: (data) => {
-   queryClient.setQueryData(scanKeys.currentSession(), {
-    sessionId: data.session_id,
-   })
-  },
- })
+  return useMutation({
+    mutationFn: scanApi.createPhotoSession,
+    onSuccess: (data) => {
+      setSession(data.session_id)
+    },
+  })
 }

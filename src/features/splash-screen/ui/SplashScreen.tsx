@@ -79,7 +79,7 @@ export function SplashScreen() {
   if (!minDurationDone) return
 
   if (me?.token && me?.has_name) {
-   router.replace('/restaurants')
+   router.replace('/visits')
    return
   }
 

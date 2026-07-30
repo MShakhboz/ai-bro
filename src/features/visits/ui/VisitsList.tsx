@@ -1,15 +1,16 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { Check, MessageCircle, Receipt } from 'lucide-react'
+import { Camera, Check, MessageCircle, Receipt } from 'lucide-react'
 import { useRestaurants } from '../hooks/useRestaurants'
 import { Restaurant } from '../types/restaurants.type'
 import RestaurantsLoading from './RestaurantsLoading'
 import { useRouter } from 'next/navigation'
 import { useAppStore } from '@/store/use-app-store'
 import { useSelectRestaurant } from '../hooks/useSelectRestaurant'
-import { useSessionStatus } from '@/features/scan/hooks/useSessionStatus'
-import { Button } from '@/components/ui/button'
+import { useCreatePhotoSession } from '@/features/scan/hooks/useCreatePhotoSession'
+import { useScanQr } from '@/features/scan/hooks/useScanQr'
+import { Button } from '@base-ui/react'
 import {
   Dialog,
   DialogContent,
@@ -17,11 +18,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import CameraScanner from '@/components/ui/camera-scanner'
-import { useScanSession } from '@/features/scan/hooks/useScanSession'
 import { useGeolocation } from '@/shared/hooks/useGeolocation'
+import { useScanSession } from '@/features/scan/hooks/useScanSession'
+import CameraScanner from '@/components/ui/camera-scanner'
+import { useSessionStatus } from '@/features/scan/hooks/useSessionStatus'
 
-export default function RestaurantsList() {
+interface VisitsListProps {
+  userName: string
+}
+
+export default function VisitsList() {
   const {
     data,
     error,
@@ -32,8 +38,7 @@ export default function RestaurantsList() {
   } = useRestaurants()
   const router = useRouter()
   const setVisit = useAppStore((state) => state.setVisit)
-  const loadMoreRef = useRef<HTMLDivElement>(null)
-  const { sessionId, imgOrder } = useAppStore()
+  const { sessionId } = useAppStore()
   const name = useAppStore((state) => state.name)
   const me = useAppStore((state) => state.me)
   const userName = me?.user.name ?? name?.name
@@ -49,6 +54,28 @@ export default function RestaurantsList() {
     title: '',
     description: '',
   })
+
+  const { location } = useGeolocation()
+
+  const {
+    addPhoto: submitPhotoScan,
+    scanQr,
+    finish,
+    reset,
+  } = useScanSession({
+    latitude: location?.latitude ?? NaN,
+    longitude: location?.longitude ?? NaN,
+  })
+
+  const loadMoreRef = useRef<HTMLDivElement>(null)
+  const { mutate: selectRestaurant } = useSelectRestaurant(sessionId)
+
+  const {
+    data: sessionStatus,
+    isPending: isSessionStatusPending,
+    isError: isSessionStatusError,
+    isFetching,
+  } = useSessionStatus(sessionId)
 
   useEffect(() => {
     const el = loadMoreRef.current
@@ -69,6 +96,7 @@ export default function RestaurantsList() {
 
   const visits = data?.pages.flatMap((p) => p.data) ?? []
   const total = data?.pages[0]?.meta.total ?? 0
+  const hasVisits = !isPending && !error && visits.length > 0
 
   const formatDate = (dateStr: string) =>
     new Date(dateStr).toLocaleDateString('ru-RU', {
@@ -77,24 +105,6 @@ export default function RestaurantsList() {
       year: 'numeric',
     })
 
-  const {
-    data: sessionStatus,
-    isPending: isSessionStatusPending,
-    isError: isSessionStatusError,
-  } = useSessionStatus(sessionId)
-
-  const { location } = useGeolocation()
-
-  const {
-    addPhoto: submitPhotoScan,
-    scanQr,
-    finish,
-    reset,
-  } = useScanSession({
-    latitude: location?.latitude ?? NaN,
-    longitude: location?.longitude ?? NaN,
-  })
-
   const handleSelect = async ({
     id,
     name,
@@ -102,10 +112,8 @@ export default function RestaurantsList() {
     id: string | number
     name: string
   }) => {
-    // selectRestaurant({ place_id: String(id), name })
-    router.push(
-      `/restaurants/${id}?restaurant_name=${encodeURIComponent(name)}`,
-    )
+    selectRestaurant({ place_id: String(id), name })
+    router.push(`/visits/${id}?restaurant_name=${encodeURIComponent(name)}`)
   }
 
   const showDialog = (
@@ -148,6 +156,15 @@ export default function RestaurantsList() {
   const formatAmount = (amount: number) =>
     new Intl.NumberFormat('ru-RU').format(amount)
 
+  const pluralizeRestaurants = (n: number) => {
+    const mod10 = n % 10
+    const mod100 = n % 100
+    if (mod10 === 1 && mod100 !== 11) return 'ресторан'
+    if ([2, 3, 4].includes(mod10) && ![12, 13, 14].includes(mod100))
+      return 'ресторана'
+    return 'ресторанов'
+  }
+
   const renderPreview = (visit: Restaurant) => {
     const Icon =
       visit.preview_type === 'chat_message'
@@ -157,21 +174,15 @@ export default function RestaurantsList() {
           : Check
 
     return (
-      <div className='flex items-center gap-1.5 text-xs text-[#B96A45]'>
-        {visit.preview_type === 'chat_message' && (
-          <span className='font-medium'>AI:</span>
+      <p className='line-clamp-1 text-sm text-gray-500'>
+        {visit.preview_type === 'chat_message' ? (
+          <span className='text-[#B96A45]'>AI: {visit.preview_text}</span>
+        ) : (
+          visit.preview_text
         )}
-        <span className='line-clamp-1'>{visit.preview_text}</span>
-      </div>
+      </p>
     )
   }
-
-  // if (
-  //   isSessionStatusPending ||
-  //   ['pending', 'processing'].includes(sessionStatus?.status ?? '')
-  // ) {
-  //   return <RestaurantsLoading />
-  // }
 
   if (error) {
     return (
@@ -187,7 +198,6 @@ export default function RestaurantsList() {
 
   return (
     <div className='flex h-full min-h-0 flex-col bg-[#F5F1EA]'>
-      {/* Header */}
       {isScanning ? (
         <CameraScanner
           onQrSuccess={handleQrSuccess}
@@ -201,7 +211,7 @@ export default function RestaurantsList() {
           <div className='shrink-0 px-6 pt-6 text-center'>
             <p className='text-base italic text-gray-400'>Добрый вечер,</p>
             <h1 className='font-serif text-2xl font-bold text-gray-900'>
-              {userName}
+              {userName}!
             </h1>
           </div>
 
@@ -221,7 +231,7 @@ export default function RestaurantsList() {
                     onClick={() =>
                       handleSelect({ id: c.place_id, name: c.name })
                     }
-                    className='flex items-start justify-between gap-3 py-3 px-6 text-left border-b border-b-[#1C140908]'
+                    className='cursor-pointer flex items-start justify-between gap-3 py-3 px-6 text-left border-b border-b-[#1C140908]'
                   >
                     <div className='flex min-w-0 items-start gap-3'>
                       <div>
@@ -234,7 +244,82 @@ export default function RestaurantsList() {
                   </button>
                 ))}
             </div>
+
+            {hasVisits && (
+              <div className='relative flex min-h-0 flex-col'>
+                {/* Header */}
+                <div className='flex shrink-0 items-baseline justify-between px-6 pb-3'>
+                  <p className='text-sm text-gray-900'>Ваши места</p>
+                  <p className='text-xs text-gray-400'>
+                    {total} {pluralizeRestaurants(total)}
+                  </p>
+                </div>
+
+                {/* Scrollable visits area */}
+                <div className='min-h-0 overflow-y-auto px-6 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden '>
+                  <div className='flex flex-col gap-5 pb-2'>
+                    {visits.map((visit, i) => (
+                      <button
+                        key={visit.id}
+                        onClick={() =>
+                          handleSelect({
+                            id: visit.id,
+                            name: visit.restaurant_name,
+                          })
+                        }
+                        className='flex items-start justify-between gap-3 text-left'
+                      >
+                        <div className='flex min-w-0 items-start gap-3'>
+                          {i === 0 ? (
+                            <span className='mt-1.5 h-2 w-2 shrink-0 rounded-full bg-[#C1633E]' />
+                          ) : (
+                            <span className='mt-0.5 w-2 shrink-0 text-center text-xs text-gray-300'>
+                              {i + 1}
+                            </span>
+                          )}
+
+                          <div className='min-w-0'>
+                            <h3 className='truncate text-sm font-semibold text-gray-900'>
+                              {visit.restaurant_name}
+                              {visit.table_number != null && (
+                                <span className='font-normal text-gray-400'>
+                                  {' '}
+                                  · Стол {visit.table_number}
+                                </span>
+                              )}
+                            </h3>
+
+                            {renderPreview(visit)}
+                          </div>
+                        </div>
+
+                        <div className='shrink-0 whitespace-nowrap text-right'>
+                          <p className='text-xs text-gray-400'>
+                            {formatDate(visit.visit_date)}
+                          </p>
+                          <p className='text-sm text-gray-900'>
+                            {formatAmount(visit.total_amount)} ₽
+                          </p>
+                        </div>
+                      </button>
+                    ))}
+
+                    {/* Infinite scroll sentinel */}
+                    <div
+                      ref={loadMoreRef}
+                      className='flex min-h-0 items-center justify-center'
+                    >
+                      {isFetchingNextPage && (
+                        <div className='h-6 w-6 animate-spin rounded-full border-2 border-gray-300 border-t-gray-900' />
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
+
+          {/* Scan button */}
           <div className='shrink-0 px-6 pb-8 pt-4'>
             <Button
               onClick={() => setIsScanning(true)}
