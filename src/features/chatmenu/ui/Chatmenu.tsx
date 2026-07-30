@@ -55,7 +55,9 @@ export default function ChatPage({ id }: { id: string | number }) {
   const { mutate: selectRestaurant, data } = useSelectRestaurant({
     sessionId,
     payload: {
-      ...(id !== 'new_restaurant' ? { place_id: String(id) } : {}),
+      ...(id !== 'new_restaurant'
+        ? { place_id: String(id), name: restaurantName ?? '' }
+        : {}),
       restaurant_name: restaurantName ?? '',
     },
   })
@@ -142,7 +144,7 @@ export default function ChatPage({ id }: { id: string | number }) {
           onSend={sendMessage}
           onSuggestionClick={handleSuggestion}
           onCameraClick={handleCameraClick}
-          menudata={data?.menu.categories}
+          menudata={data?.menu?.categories}
         />
       </div>
 

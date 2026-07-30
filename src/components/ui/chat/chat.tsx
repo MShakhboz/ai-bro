@@ -17,6 +17,7 @@ import {
 import { ScrollArea } from '../scroll-area'
 import { Tabs, TabsContent } from '../tabs'
 import RestaurantMenu from './restaurant-menu'
+import MenuItemDrawer from './menu-item-drawer'
 
 interface ChatProps {
   restaurant?: Restaurant
@@ -40,9 +41,16 @@ export default function Chat({
   menudata,
 }: ChatProps) {
   const [tab, setTab] = useState('assistant')
+  const [openedMenuItem, setOpenedMenuItem] = useState<boolean>(false)
+  const [menuItem, setMenuItem] = useState<number | null>(null) // 988
+
+  const onSelectItem = (i: number | null) => {
+    setMenuItem(i)
+    setOpenedMenuItem(true)
+  }
 
   return (
-    <div className='flex h-full min-h-0 flex-col bg-background'>
+    <div className='flex h-full min-h-0 flex-col bg-background relative'>
       <ChatHeader value={tab} onValueChange={setTab} />
 
       <Tabs
@@ -52,12 +60,17 @@ export default function Chat({
       >
         <TabsContent
           value='assistant'
+          keepMounted
           className='mt-0 flex min-h-0 flex-1 flex-col'
         >
           <ScrollArea className='min-h-0 flex-1'>
             <RestaurantCard restaurant={restaurant} />
 
-            <MessageList messages={messages} isTyping={loading} />
+            <MessageList
+              messages={messages}
+              isTyping={loading}
+              onItemClick={onSelectItem}
+            />
           </ScrollArea>
 
           <SuggestionList
@@ -72,14 +85,28 @@ export default function Chat({
           />
         </TabsContent>
 
-        <TabsContent value='menu' className='mt-0 flex-1 overflow-y-auto'>
-          <RestaurantMenu menuData={menudata} />
+        <TabsContent
+          value='menu'
+          keepMounted
+          className='mt-0 flex-1 overflow-y-auto'
+        >
+          <RestaurantMenu menuData={menudata} onItemClick={onSelectItem} />
         </TabsContent>
 
-        <TabsContent value='order' className='mt-0 min-h-0 flex-1'>
+        <TabsContent value='order' keepMounted className='mt-0 min-h-0 flex-1'>
           <div className='h-full overflow-auto'>order</div>
         </TabsContent>
       </Tabs>
+      <MenuItemDrawer
+        isOpened={openedMenuItem}
+        onOpen={setOpenedMenuItem}
+        menuItemId={menuItem}
+        onAskAi={(v) => {
+          setOpenedMenuItem(false)
+          setTab('assistant')
+          onSuggestionClick(v)
+        }}
+      />
     </div>
   )
 }

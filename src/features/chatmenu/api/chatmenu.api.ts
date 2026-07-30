@@ -2,6 +2,7 @@
 import { api } from '@/shared/lib/axios'
 import type {
   GetMessagesResponse,
+  MenuItemResponse,
   SelectRestaurantPayload,
   SelectRestaurantResponse,
   SendMessagePayload,
@@ -22,5 +23,10 @@ export const chatApi = {
       payload,
     )
     return data.message // unwrap — GET uses `messages` (plural), POST uses `message` (singular)
+  },
+
+  getMenuItem: async (id: string | number) => {
+    const { data } = await api.get<MenuItemResponse>(`/menu-items/${id}`)
+    return data.item
   },
 }

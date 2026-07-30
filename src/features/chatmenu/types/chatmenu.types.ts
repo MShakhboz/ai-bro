@@ -43,13 +43,15 @@ export type MenuItem = {
   currency: string
   tags: string[]
   allergens: string[]
+  image?: string
+  popular?: boolean
 }
 
 export type MenuCategory = {
   id: number
   name_original: string
   name_ru: string
-  items: MenuItem[]
+  items: ReferenceItem[]
 }
 
 export type SelectRestaurantResponse = {
@@ -91,6 +93,7 @@ export interface ReferenceItem {
   taste_profile: string[]
 
   image?: string
+  popular?: boolean
 }
 
 export type ChatMessage = {
@@ -100,4 +103,24 @@ export type ChatMessage = {
   text: string
   referenced_items?: ReferenceItem[]
   created_at?: string
+}
+
+export interface MenuDetailItem {
+  id: number
+  name_original: string
+  name_ru: string
+  description_ru: string
+  price: number
+  currency: string
+  weight_volume: string | null
+  tags: string[]
+  allergens: string[]
+  nutrition: Nutrition
+  taste_profile: string[]
+  origin_guess: string | null
+  image?: string
+}
+
+export interface MenuItemResponse {
+  item: MenuDetailItem
 }

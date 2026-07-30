@@ -24,11 +24,11 @@ export function useSessionStatus(sessionId?: string | null, enabled?: boolean) {
         status === 'failed' ||
         status === 'awaiting_restaurant'
       ) {
-        if (resId) {
-          router.push(
-            `/restaurants/${resId}?restaurant_name=${encodeURIComponent(resName ?? '')}`,
-          )
-        }
+        // if (resId) {
+        //   router.push(
+        //     `/restaurants/${resId}?restaurant_name=${encodeURIComponent(resName ?? '')}`,
+        //   )
+        // }
         if (resName) {
           router.push(
             `/restaurants/new_restaurant?restaurant_name=${encodeURIComponent(resName ?? '')}`,

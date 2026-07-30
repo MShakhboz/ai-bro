@@ -21,21 +21,13 @@ import {
 interface MessageProps {
   message: ChatMessage
   onReferencedItemClick?: (item: ReferenceItem) => void
-}
-
-interface DishCardProps {
-  image: string
-  price: number
-  name: string
-  calories: number
-  weight: number
-  popular?: boolean
-  onAdd?: () => void
+  onItemClick?: (i: number | null) => void
 }
 
 export default function Message({
   message,
   onReferencedItemClick,
+  onItemClick,
 }: MessageProps) {
   const isAssistant = message.role === 'assistant'
 
@@ -86,9 +78,13 @@ export default function Message({
                 {message.referenced_items.map((item) => (
                   <CarouselItem
                     key={item.id}
-                    className='pl-3 py-1 basis-[85%] sm:basis-1/2 lg:basis-1/3'
+                    className='pl-3 py-1 basis-[55%] sm:basis-1/3 lg:basis-1/4'
                   >
-                    <DishCard item={item} onAdd={onReferencedItemClick} />
+                    <DishCard
+                      item={item}
+                      onAdd={onReferencedItemClick}
+                      onItemClick={() => onItemClick?.(item.id)}
+                    />
                   </CarouselItem>
                 ))}
               </CarouselContent>
@@ -102,12 +98,14 @@ export default function Message({
 export function DishCard({
   item,
   onAdd,
+  onItemClick,
 }: {
   item: ReferenceItem
   onAdd?: (item: ReferenceItem) => void
+  onItemClick: () => void
 }) {
   return (
-    <Card className='gap-3 p-3'>
+    <Card className='gap-3 p-3' onClick={onItemClick}>
       <div className='space-y-2 p-0 w-full'>
         <div className='relative size-32 w-full shrink-0 overflow-hidden rounded-md bg-muted'>
           {item.image ? (
@@ -124,25 +122,23 @@ export function DishCard({
             </div>
           )}
         </div>
-        <div className='min-w-0 space-y-0.5 mt-1.5'>
-          <p className='text-sm text-[#C8713A] font-bold'>
-            {item.price} {item.currency}
-          </p>
-          <p className='truncate font-medium text-[#1C1409]'>
-            {item.name_ru} {item.name_ru}
-          </p>
-          {(item.weight_volume || item.nutrition.calories) && (
-            <p className='truncate font-medium text-[#ABB1BA]'>
-              <span>{item.nutrition.calories} ккал</span>
-              {item.weight_volume ? (
-                <span>
-                  {' \u2022 '} {item.weight_volume}
-                </span>
-              ) : (
-                ''
-              )}
+        <div className='flex'>
+          <div className='min-w-0 flex-1 mt-1.5 space-y-0.5'>
+            <p className='text-sm font-bold text-[#C8713A]'>
+              {item.price} {item.currency}
             </p>
-          )}
+
+            <p className='truncate font-medium text-[#1C1409]'>
+              {item.name_ru} {item.name_ru}
+            </p>
+
+            {(item.weight_volume || item.nutrition.calories) && (
+              <p className='truncate text-[#ABB1BA]'>
+                <span>{item.nutrition.calories} ккал</span>
+                {item.weight_volume && <span> • {item.weight_volume}</span>}
+              </p>
+            )}
+          </div>
         </div>
         <button
           type='button'

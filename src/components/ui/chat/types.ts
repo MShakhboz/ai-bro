@@ -17,6 +17,6 @@ export interface Message {
 }
 
 export interface Suggestion {
-  id: string
+  id: string | number
   label: string
 }

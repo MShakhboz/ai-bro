@@ -4,64 +4,59 @@ import Image from 'next/image'
 import { ImageIcon, Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { MenuCategory } from '@/features/chatmenu/types/chatmenu.types'
-
-const categories = [
-  'Все',
-  'Закуски',
-  'Пасты',
-  'Основное',
-  'Десерты',
-  'kkkkk',
-  'pppppp',
-  'ooooooo',
-  'tttttttt',
-  'nnnnnn',
-]
-
-const products = Array.from({ length: 8 }).map((_, index) => ({
-  id: index,
-  name: 'Паста Карбонара Карбонара Карбонара',
-  price: 890,
-  weight: 320,
-  calories: 239,
-  image: '',
-  popular: index < 2,
-}))
+import { useMemo, useState } from 'react'
 
 export default function RestaurantMenu({
   menuData,
+  onItemClick,
 }: {
   menuData?: MenuCategory[]
+  onItemClick: (i: number | null) => void
 }) {
+  const [category, setCategory] = useState<null | Number>(null)
+  const product = useMemo(() => {
+    if (!category) {
+      return { items: menuData?.flatMap((c) => c.items) }
+    }
+    return menuData?.find((i) => i.id === category)
+  }, [category, menuData])
   return (
     <div className='relative'>
       {/* Categories */}
       <div className='sticky top-0 z-40 bg-background'>
         <div className='flex overflow-x-auto gap-3 py-3 px-4 whitespace-nowrap [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]'>
-          {categories.map((category, index) => (
+          <button
+            key='all'
+            className={`shrink-0 rounded-full px-5 py-3 text-sm font-medium ${category === null ? 'bg-[#8A735B] text-white' : 'bg-[#EFE9E2] text-[#7D6A57]'}`}
+            onClick={() => setCategory(null)}
+          >
+            Все
+          </button>
+          {menuData?.map((c, index) => (
             <button
-              key={category}
+              key={c.id}
               className={`shrink-0 rounded-full px-5 py-3 text-sm font-medium ${
-                index === 0
+                category === c.id
                   ? 'bg-[#8A735B] text-white'
                   : 'bg-[#EFE9E2] text-[#7D6A57]'
               }`}
+              onClick={() => setCategory(c.id)}
             >
-              {category}
+              {c.name_ru}
             </button>
           ))}
         </div>
       </div>
 
       {/* Products */}
-      <div className='grid grid-cols-2 px-4 gap-x-4 gap-y-6 py-5'>
-        {products.map((item) => (
-          <div key={item.id}>
+      <div className='grid grid-cols-2 px-4 gap-4 py-5'>
+        {product?.items?.map((item) => (
+          <div key={item.id} onClick={() => onItemClick(item.id)}>
             <div className='relative overflow-hidden rounded-[28px] bg-white'>
-              {item.image ? (
+              {item?.image ? (
                 <Image
                   src={item.image}
-                  alt={item.name}
+                  alt={item.name_ru ?? ''}
                   width={500}
                   height={500}
                   className='aspect-square w-full object-cover'
@@ -72,7 +67,7 @@ export default function RestaurantMenu({
                 </div>
               )}
 
-              {item.popular && (
+              {item?.popular && (
                 <div className='absolute left-3 top-3 rounded-lg bg-[#D77834] px-3 py-1 text-xs font-medium text-white'>
                   Популярное
                 </div>
@@ -92,12 +87,20 @@ export default function RestaurantMenu({
               </p>
 
               <h3 className='mt-2 text-sm font-semibold text-[#2C2A28] truncate'>
-                {item.name}
+                {item.name_ru}
               </h3>
 
-              <p className='mt-1 text-xs text-[#A7A7A7]'>
-                {item.weight} г • {item.calories} ККал
-              </p>
+              {(item.weight_volume || item.nutrition?.calories) && (
+                <p className='mt-1 text-xs text-[#A7A7A7]'>
+                  {[
+                    item.weight_volume && `${item.weight_volume} г`,
+                    item.nutrition?.calories &&
+                      `${item.nutrition.calories} ККал`,
+                  ]
+                    .filter(Boolean)
+                    .join(' • ')}
+                </p>
+              )}
             </div>
           </div>
         ))}
