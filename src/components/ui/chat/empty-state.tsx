@@ -13,6 +13,7 @@ export default function EmptyState() {
           type: 'text',
           text: 'Добрый вечер! Я загрузил меню Semplice. Что порекомендовать? Есть особые предпочтения?',
         }}
+        handleAddItem={() => {}}
       />
     </div>
   )
