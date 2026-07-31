@@ -78,14 +78,17 @@ export function SplashScreen() {
   useEffect(() => {
     if (!minDurationDone) return
 
-    if (me?.token && me?.has_name) {
-      router.replace('/visits')
-      return
-    }
-
-    if (me?.token && !me?.has_name) {
-      router.replace('/onboarding')
-      return
+    if (me?.token) {
+      if (me?.recent_visits) {
+        router.replace('/visits')
+        return
+      } else if (!me?.has_name) {
+        router.replace('/name')
+        return
+      } else {
+        router.replace('/onboarding')
+        return
+      }
     }
   }, [minDurationDone, router, me])
 

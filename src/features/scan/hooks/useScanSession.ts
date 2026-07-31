@@ -68,10 +68,14 @@ export function useScanSession(sessionProps: CreatePhotoSession) {
   }
 
   const scanQrCode = async (value: string) => {
-    return scanQr({
+    const result = await scanQr({
       url: value,
       ...sessionProps,
     })
+
+    sessionRef.current.sessionId = result.session_id
+
+    return result
   }
 
   const finish = async () => {

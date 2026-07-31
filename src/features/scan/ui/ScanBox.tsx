@@ -65,7 +65,7 @@ export default function ScanBox() {
     isError: isSessionStatusError,
     isLoading,
     error,
-  } = useSessionStatus(sessionId, startPolling)
+  } = useSessionStatus(sessionId, startPolling, () => setStartPolling(false))
 
   const greeting = useMemo(() => {
     const hour = new Date().getHours()
@@ -82,13 +82,16 @@ export default function ScanBox() {
     setIsScanning(false)
     setDialog({ title, description, imageUrl })
     setDialogOpen(true)
+    setStartPolling(false)
   }
 
   const handleQrSuccess = async (value: string) => {
     try {
       await scanQr(value)
+      setStartPolling(true)
+      setIsScanning(false)
       //  setPendingScan({ type: 'qr', value })
-      router.push(`/restaurants`)
+      // router.push(`/restaurants`)
     } catch {
       showDialog(
         'Ошибка сканирования',
@@ -102,7 +105,6 @@ export default function ScanBox() {
       await submitPhotoScan(photo)
       setStartPolling(true)
       setIsScanning(false)
-      // router.push(`/restaurants`)
     } catch (err) {
       const message =
         err instanceof Error
@@ -113,7 +115,12 @@ export default function ScanBox() {
   }
 
   useEffect(() => {
-    if (isSessionStatusError || sessionStatus?.status === 'failed') {
+    if (
+      isSessionStatusError ||
+      sessionStatus?.status === 'failed' ||
+      sessionStatus?.candidates?.length == 0 ||
+      !sessionStatus?.guessed_restaurant_name
+    ) {
       setDialogOpen(isSessionStatusError)
       setDialog({
         title: 'Ошибка',
@@ -123,7 +130,7 @@ export default function ScanBox() {
             : (error?.message ?? ''),
       })
     }
-  }, [isSessionStatusError, sessionStatus?.status])
+  }, [isSessionStatusError, sessionStatus])
 
   useEffect(() => {
     if (sessionStatus?.candidates?.length) {

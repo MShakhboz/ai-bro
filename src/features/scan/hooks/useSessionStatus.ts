@@ -1,10 +1,16 @@
 // src/features/scan/hooks/useSessionStatus.ts
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, type UseQueryOptions } from '@tanstack/react-query'
 import { scanApi } from '../api/scan.api'
 import { scanKeys } from '../api/scan.keys'
 import { useRouter } from 'next/navigation'
+import { SessionStatusResponse } from '../types/scan.type'
+import { Dispatch, SetStateAction } from 'react'
 
-export function useSessionStatus(sessionId?: string | null, enabled?: boolean) {
+export function useSessionStatus(
+  sessionId?: string | null,
+  enabled?: boolean,
+  fallback?: () => void,
+) {
   const router = useRouter()
   return useQuery({
     queryKey: scanKeys.sessionStatus(sessionId!),
@@ -31,9 +37,10 @@ export function useSessionStatus(sessionId?: string | null, enabled?: boolean) {
         // }
         if (resName) {
           router.push(
-            `/restaurants/new_restaurant?restaurant_name=${encodeURIComponent(resName ?? '')}`,
+            `/visits/new_restaurant?restaurant_name=${encodeURIComponent(resName ?? '')}`,
           )
         }
+        fallback?.()
         return false
       }
 

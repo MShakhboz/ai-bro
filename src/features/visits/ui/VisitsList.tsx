@@ -112,7 +112,7 @@ export default function VisitsList() {
     id: string | number
     name: string
   }) => {
-    selectRestaurant({ place_id: String(id), name })
+    await selectRestaurant({ place_id: String(id), name })
     router.push(`/visits/${id}?restaurant_name=${encodeURIComponent(name)}`)
   }
 
