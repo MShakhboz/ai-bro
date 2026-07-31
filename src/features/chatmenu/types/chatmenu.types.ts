@@ -130,6 +130,7 @@ export interface OrderItem {
   quantity: number
   price_at_add: number
   menu_item: Partial<MenuItem>
+  image?: string
 }
 
 export interface AddOrderItemPayload {

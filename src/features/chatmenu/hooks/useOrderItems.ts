@@ -6,23 +6,20 @@ import {
   useQueryClient,
   type UseQueryOptions,
 } from '@tanstack/react-query'
-import { AddOrderItemPayload, OrderItem } from '../types/chatmenu.types'
+import { OrderItem } from '../types/chatmenu.types'
 import { chatApi } from '../api/chatmenu.api'
+import { chatKeys } from '../api/chatmenu.keys'
 
 // ---------- Query keys ----------
 
-export const visitItemsKeys = {
-  all: (visitId: number | string) => ['visits', visitId, 'items'] as const,
-}
-
 // ---------- GET /api/v1/visits/{visit_id}/items ----------
 
-export function useVisitItems(
+export function useOrderItems(
   visitId: number | string,
   options?: Omit<UseQueryOptions<OrderItem[]>, 'queryKey' | 'queryFn'>,
 ) {
   return useQuery({
-    queryKey: visitItemsKeys.all(visitId),
+    queryKey: chatKeys.allOrder(visitId),
     queryFn: () => chatApi.getAllOrders(visitId),
     enabled: !!visitId,
     ...options,

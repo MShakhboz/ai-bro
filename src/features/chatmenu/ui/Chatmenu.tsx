@@ -21,7 +21,6 @@ import type { ChatMessage } from '@/features/chatmenu/types/chatmenu.types'
 import dayjs from 'dayjs'
 import { useSelectRestaurant } from '@/features/restaurants/hooks/useSelectRestaurant'
 import { useSearchParams } from 'next/navigation'
-import { mockMenuCategories } from '@/features/restaurants/mockdata'
 
 const suggestions: Suggestion[] = [
   { id: '1', label: 'Хочу легко' },
@@ -145,6 +144,7 @@ export default function ChatPage({ id }: { id: string | number }) {
           onSuggestionClick={handleSuggestion}
           onCameraClick={handleCameraClick}
           menudata={data?.menu?.categories}
+          visitId={data?.visit_id}
         />
       </div>
 
