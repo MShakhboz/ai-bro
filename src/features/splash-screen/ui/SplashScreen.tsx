@@ -82,9 +82,6 @@ export function SplashScreen() {
       if (me?.recent_visits?.length > 0) {
         router.replace('/visits')
         return
-      } else if (!me?.has_name) {
-        router.replace('/name')
-        return
       } else {
         router.replace('/onboarding')
         return

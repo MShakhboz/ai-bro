@@ -112,8 +112,13 @@ export default function VisitsList() {
     id: string | number
     name: string
   }) => {
-    await selectRestaurant({ place_id: String(id), name })
-    router.push(`/visits/${id}?restaurant_name=${encodeURIComponent(name)}`)
+    // await selectRestaurant({ place_id: String(id), name })
+    const params = new URLSearchParams({
+      visit_id: String(id),
+      restaurant_name: name ?? '',
+    })
+
+    router.push(`/visits/${id}?${params.toString()}`)
   }
 
   const showDialog = (
@@ -270,14 +275,6 @@ export default function VisitsList() {
                         className='flex items-start justify-between gap-3 text-left'
                       >
                         <div className='flex min-w-0 items-start gap-3'>
-                          {i === 0 ? (
-                            <span className='mt-1.5 h-2 w-2 shrink-0 rounded-full bg-[#C1633E]' />
-                          ) : (
-                            <span className='mt-0.5 w-2 shrink-0 text-center text-xs text-gray-300'>
-                              {i + 1}
-                            </span>
-                          )}
-
                           <div className='min-w-0'>
                             <h3 className='truncate text-sm font-semibold text-gray-900'>
                               {visit.restaurant_name}

@@ -8,4 +8,5 @@ export const chatKeys = {
   menuItem: (menuItemId: number | null) => ['menu-item', menuItemId],
   allOrder: (orderId?: number | string) =>
     ['orders', orderId, 'items'] as const,
+  menu: (restaurantId: number | string) => ['menu', restaurantId] as const,
 }

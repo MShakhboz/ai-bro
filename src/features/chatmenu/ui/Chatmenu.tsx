@@ -21,6 +21,7 @@ import type { ChatMessage } from '@/features/chatmenu/types/chatmenu.types'
 import dayjs from 'dayjs'
 import { useSelectRestaurant } from '@/features/restaurants/hooks/useSelectRestaurant'
 import { useSearchParams } from 'next/navigation'
+import { useGetMenu } from '../hooks/useGetAllMenus'
 
 const suggestions: Suggestion[] = [
   { id: '1', label: 'Хочу легко' },
@@ -42,7 +43,7 @@ function toUiMessage(msg: ChatMessage): ChatMessage {
 export default function ChatPage({ id }: { id: string | number }) {
   // TODO: confirm where visitId actually comes from — assuming app store here,
   // set during the scan/restaurant-selection flow before landing on /chat
-  const { pendingScan, setPendingScan, visitId, restaurant } = useAppStore()
+  // const { pendingScan, setPendingScan, visitId, restaurant } = useAppStore()
 
   const [isScanning, setIsScanning] = useState(false)
   const [cameraError, setCameraError] = useState<string | null>(null)
@@ -50,7 +51,7 @@ export default function ChatPage({ id }: { id: string | number }) {
 
   const searchParams = useSearchParams()
   const restaurantName = searchParams.get('restaurant_name')
-
+  const visitIdQuery = searchParams.get('visit_id')
   const { mutate: selectRestaurant, data } = useSelectRestaurant({
     sessionId,
     payload: {
@@ -60,15 +61,17 @@ export default function ChatPage({ id }: { id: string | number }) {
       restaurant_name: restaurantName ?? '',
     },
   })
-  const { data: history, isLoading } = useChatMessages(data?.visit_id)
+  const visitId = data?.visit_id ?? visitIdQuery
+  const { data: history, isLoading } = useChatMessages(Number(visitId))
   const { mutate: sendMessageMutation, isPending: isSending } = useSendMessage(
-    data?.visit_id,
+    Number(visitId),
   )
+  const { data: menus } = useGetMenu(Number(id))
 
   const messages: ChatMessage[] = (history ?? []).map(toUiMessage)
 
   function sendMessage(text: string, menuItemId?: number) {
-    if (!text.trim() || !data?.visit_id) return
+    if (!text.trim() || !visitId) return
     sendMessageMutation({
       type: 'text',
       text: text.trim(),
@@ -143,8 +146,8 @@ export default function ChatPage({ id }: { id: string | number }) {
           onSend={sendMessage}
           onSuggestionClick={handleSuggestion}
           onCameraClick={handleCameraClick}
-          menudata={data?.menu?.categories}
-          visitId={data?.visit_id}
+          menudata={data?.menu?.categories ?? menus?.categories}
+          visitId={Number(visitId)}
         />
       </div>
 

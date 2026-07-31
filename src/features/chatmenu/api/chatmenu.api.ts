@@ -3,6 +3,7 @@ import { api } from '@/shared/lib/axios'
 import type {
   AddOrderItemPayload,
   GetMessagesResponse,
+  MenuCategory,
   MenuItemResponse,
   OrderItem,
   SelectRestaurantPayload,
@@ -28,6 +29,12 @@ export const chatApi = {
     return data.message // unwrap — GET uses `messages` (plural), POST uses `message` (singular)
   },
 
+  getAllMenus: async (resId: number | string) => {
+    const { data } = await api.get<{ categories: MenuCategory[] }>(
+      `/restaurants/${resId}/menu`,
+    )
+    return data
+  },
   getMenuItem: async (id: string | number) => {
     const { data } = await api.get<MenuItemResponse>(`/menu-items/${id}`)
     return data.item
