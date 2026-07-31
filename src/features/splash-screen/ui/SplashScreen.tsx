@@ -79,7 +79,7 @@ export function SplashScreen() {
     if (!minDurationDone) return
 
     if (me?.token) {
-      if (me?.recent_visits) {
+      if (me?.recent_visits?.length > 0) {
         router.replace('/visits')
         return
       } else if (!me?.has_name) {
