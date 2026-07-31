@@ -1,3 +1,5 @@
+import { MenuCategory } from '@/features/chatmenu/types/chatmenu.types'
+
 export interface Restaurant {
   id: number
   restaurant_name: string
@@ -44,13 +46,6 @@ export type MenuItem = {
   currency: string
   tags: string[]
   allergens: string[]
-}
-
-export type MenuCategory = {
-  id: number
-  name_original: string
-  name_ru: string
-  items: MenuItem[]
 }
 
 export type SelectRestaurantResponse = {
