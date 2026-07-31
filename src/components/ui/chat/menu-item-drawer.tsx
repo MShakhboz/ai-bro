@@ -100,7 +100,7 @@ function DishDetailContent({
         </div>
 
         <Button
-          className='mt-7 h-14 w-full rounded-2xl bg-[#C17845] text-base font-semibold text-white shadow-md hover:bg-[#AD6A3B]'
+          className='mt-7 h-14 w-full rounded-2xl bg-[#C8713A] text-base font-semibold text-white shadow-md hover:bg-[#AD6A3B]'
           onClick={() => console.log('added to order', { qty })}
         >
           Добавить в заказ

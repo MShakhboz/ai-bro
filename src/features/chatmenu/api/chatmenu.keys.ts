@@ -6,4 +6,6 @@ export const chatKeys = {
   messages: (visitId?: number) =>
     [...chatKeys.visit(visitId), 'messages'] as const,
   menuItem: (menuItemId: number | null) => ['menu-item', menuItemId],
+  allOrder: (orderId?: number | string) =>
+    ['orders', orderId, 'items'] as const,
 }

@@ -18,6 +18,8 @@ import { ScrollArea } from '../scroll-area'
 import { Tabs, TabsContent } from '../tabs'
 import RestaurantMenu from './restaurant-menu'
 import MenuItemDrawer from './menu-item-drawer'
+import CartList from './cart-list'
+import { useAddVisitItem } from '@/features/chatmenu/hooks/useAddVisitItem'
 
 interface ChatProps {
   restaurant?: Restaurant
@@ -28,6 +30,7 @@ interface ChatProps {
   onSuggestionClick(suggestion: Suggestion): void
   onCameraClick(): void
   menudata?: MenuCategory[]
+  visitId?: string | number
 }
 
 export default function Chat({
@@ -39,10 +42,13 @@ export default function Chat({
   onSuggestionClick,
   onCameraClick,
   menudata,
+  visitId,
 }: ChatProps) {
   const [tab, setTab] = useState('assistant')
   const [openedMenuItem, setOpenedMenuItem] = useState<boolean>(false)
   const [menuItem, setMenuItem] = useState<number | null>(null) // 988
+
+  const addItem = useAddVisitItem(visitId)
 
   const onSelectItem = (i: number | null) => {
     setMenuItem(i)
@@ -94,7 +100,7 @@ export default function Chat({
         </TabsContent>
 
         <TabsContent value='order' keepMounted className='mt-0 min-h-0 flex-1'>
-          <div className='h-full overflow-auto'>order</div>
+          <CartList />
         </TabsContent>
       </Tabs>
       <MenuItemDrawer

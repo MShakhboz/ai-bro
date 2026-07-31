@@ -124,3 +124,19 @@ export interface MenuDetailItem {
 export interface MenuItemResponse {
   item: MenuDetailItem
 }
+
+export interface OrderItem {
+  id: number
+  quantity: number
+  price_at_add: number
+  menu_item: Partial<MenuItem>
+}
+
+export interface AddOrderItemPayload {
+  menu_item_id: number
+  quantity: number
+}
+
+export interface UpdateOrderItemQuantityPayload {
+  quantity: number
+}
