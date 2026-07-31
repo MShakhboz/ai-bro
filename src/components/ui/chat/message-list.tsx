@@ -11,12 +11,14 @@ interface MessageListProps {
   messages: ChatMessage[]
   isTyping?: boolean
   onItemClick: (i: number | null) => void
+  handleAddItem: (e: { menuItemId: number; quantity: number }) => void
 }
 
 export default function MessageList({
   messages,
   isTyping = false,
   onItemClick,
+  handleAddItem,
 }: MessageListProps) {
   const bottomRef = useRef<HTMLDivElement>(null)
 
@@ -34,7 +36,12 @@ export default function MessageList({
   return (
     <div className='flex flex-col gap-4 px-4 py-6'>
       {messages.map((message) => (
-        <Message key={message.id} message={message} onItemClick={onItemClick} />
+        <Message
+          key={message.id}
+          message={message}
+          onItemClick={onItemClick}
+          handleAddItem={handleAddItem}
+        />
       ))}
 
       {isTyping && (

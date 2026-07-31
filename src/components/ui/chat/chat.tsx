@@ -24,6 +24,8 @@ import { useAddVisitItem } from '@/features/chatmenu/hooks/useAddVisitItem'
 import { useOrderItems } from '@/features/chatmenu/hooks/useOrderItems'
 import { useUpdateVisitItemQuantity } from '@/features/chatmenu/hooks/useUpdateVisitItemQuantity'
 import { useDeleteVisitItem } from '@/features/chatmenu/hooks/useDeleteVisitItem'
+import { Button } from '../button'
+import { cn } from '@/lib/utils'
 
 interface ChatProps {
   restaurant?: Restaurant
@@ -85,8 +87,21 @@ export default function Chat({
     addItem.mutate({ menu_item_id: menuItemId, quantity })
   }
 
+  const total =
+    orders?.reduce(
+      (acc, o) => Number(o.price_at_add) * Number(o.quantity) + acc,
+      0,
+    ) ?? 0
+  const currency = orders?.[0]?.menu_item.currency
+  const hasOrder = tab === 'menu' && (orders?.length ?? 0) > 0
+
   return (
-    <div className='flex h-full min-h-0 flex-col bg-background relative'>
+    <div
+      className={cn(
+        'flex h-full min-h-0 flex-col bg-background relative',
+        hasOrder ? 'pb-14' : 'pb-0',
+      )}
+    >
       <ChatHeader value={tab} onValueChange={setTab} />
 
       <Tabs
@@ -106,6 +121,7 @@ export default function Chat({
               messages={messages}
               isTyping={loading}
               onItemClick={onSelectItem}
+              handleAddItem={handleAddItem}
             />
           </ScrollArea>
 
@@ -154,6 +170,14 @@ export default function Chat({
           onSuggestionClick(v)
         }}
       />
+      {hasOrder && (
+        <Button
+          className='mt-7 fixed bottom-2 h-14 w-[95%] left-1/2 -translate-x-1/2 rounded-2xl bg-[#C8713A] text-base font-semibold text-white shadow-md hover:bg-[#AD6A3B]'
+          onClick={() => setTab('order')}
+        >
+          Мой заказ · {orders?.length} блюда · {total} {currency} →
+        </Button>
+      )}
     </div>
   )
 }

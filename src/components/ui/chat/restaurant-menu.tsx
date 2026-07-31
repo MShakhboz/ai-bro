@@ -8,7 +8,6 @@ import {
   OrderItem,
 } from '@/features/chatmenu/types/chatmenu.types'
 import { useCallback, useMemo, useState } from 'react'
-import { useAddVisitItem } from '@/features/chatmenu/hooks/useAddVisitItem'
 import { cn } from '@/lib/utils'
 
 export default function RestaurantMenu({
@@ -105,54 +104,44 @@ export default function RestaurantMenu({
 
                 <div
                   className={cn(
-                    'absolute bottom-3 right-3 flex h-8 items-center overflow-hidden rounded-full bg-white shadow-lg transition-all duration-300',
+                    'absolute bottom-3 right-3 flex h-8 items-center justify-center overflow-hidden rounded-full bg-white shadow-lg transition-all duration-200',
                     quantity ? 'w-24' : 'w-8',
                   )}
                 >
-                  {quantity === 0 ? (
+                  <div className='flex items-center'>
+                    {quantity !== 0 && (
+                      <>
+                        <Button
+                          variant='ghost'
+                          size='icon'
+                          className='h-8 w-8 rounded-full text-[#D77834]'
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            if (order) decrease(order)
+                          }}
+                        >
+                          -
+                        </Button>
+
+                        <span className='min-w-6 text-center text-sm text-[#9E9488] font-semibold'>
+                          {quantity}
+                        </span>
+                      </>
+                    )}
                     <Button
+                      variant='ghost'
                       size='icon'
-                      className='h-8 w-8 rounded-full bg-white text-[#D77834] shadow-lg hover:bg-white'
+                      className='h-8 w-8 rounded-full text-[#D77834] z-10'
                       onClick={(e) => {
                         e.stopPropagation()
-                        onOrder(item.id, 1)
+                        if (quantity >= 1 && order) {
+                          increase(order)
+                        } else onOrder(item.id, quantity + 1)
                       }}
                     >
-                      <Plus className='h-5 w-5' />
+                      <Plus className='h-4 w-4' />
                     </Button>
-                  ) : (
-                    <div className='flex h-8 items-center rounded-full bg-white shadow-lg transition-all duration-200'>
-                      <Button
-                        variant='ghost'
-                        size='icon'
-                        className='h-8 w-8 rounded-full text-[#D77834]'
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          if (order) decrease(order)
-                        }}
-                      >
-                        -
-                      </Button>
-
-                      <span className='min-w-6 text-center text-sm font-semibold'>
-                        {quantity}
-                      </span>
-
-                      <Button
-                        variant='ghost'
-                        size='icon'
-                        className='h-8 w-8 rounded-full text-[#D77834]'
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          if (quantity >= 1 && order) {
-                            increase(order)
-                          } else onOrder(item.id, quantity + 1)
-                        }}
-                      >
-                        <Plus className='h-4 w-4' />
-                      </Button>
-                    </div>
-                  )}
+                  </div>
                 </div>
               </div>
 

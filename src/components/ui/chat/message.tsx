@@ -22,12 +22,14 @@ interface MessageProps {
   message: ChatMessage
   onReferencedItemClick?: (item: ReferenceItem) => void
   onItemClick?: (i: number | null) => void
+  handleAddItem: (e: { menuItemId: number; quantity: number }) => void
 }
 
 export default function Message({
   message,
   onReferencedItemClick,
   onItemClick,
+  handleAddItem,
 }: MessageProps) {
   const isAssistant = message.role === 'assistant'
 
@@ -84,6 +86,7 @@ export default function Message({
                       item={item}
                       onAdd={onReferencedItemClick}
                       onItemClick={() => onItemClick?.(item.id)}
+                      handleAddItem={handleAddItem}
                     />
                   </CarouselItem>
                 ))}
@@ -99,10 +102,12 @@ export function DishCard({
   item,
   onAdd,
   onItemClick,
+  handleAddItem,
 }: {
   item: ReferenceItem
   onAdd?: (item: ReferenceItem) => void
   onItemClick: () => void
+  handleAddItem: (e: { menuItemId: number; quantity: number }) => void
 }) {
   return (
     <Card className='gap-3 p-3' onClick={onItemClick}>
@@ -142,7 +147,13 @@ export function DishCard({
         </div>
         <button
           type='button'
-          onClick={() => onAdd?.(item)}
+          onClick={(e) => {
+            e.stopPropagation()
+            handleAddItem?.({
+              menuItemId: item.id,
+              quantity: 1,
+            })
+          }}
           className='mt-1 h-8.5 w-full rounded-[8px]  border-[1.5px] border-[#CE7135] text-xs font-bold text-[#CE7135]'
         >
           + Добавить

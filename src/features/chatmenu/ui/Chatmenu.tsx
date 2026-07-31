@@ -12,7 +12,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import { Chat, Restaurant, Suggestion } from '@/components/ui/chat'
+import { Chat, Suggestion } from '@/components/ui/chat'
 import { useAppStore } from '@/store/use-app-store'
 
 import { useChatMessages } from '@/features/chatmenu/hooks/useChatMessages'
