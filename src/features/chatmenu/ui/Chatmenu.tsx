@@ -55,9 +55,10 @@ export default function ChatPage({ id }: { id: string | number }) {
   const { mutate: selectRestaurant, data } = useSelectRestaurant({
     sessionId,
     payload: {
-      ...(id !== 'new_restaurant'
-        ? { place_id: String(id), name: restaurantName ?? '' }
-        : {}),
+      ...(id !== 'new_restaurant' && {
+        place_id: String(id),
+        name: restaurantName ?? '',
+      }),
       restaurant_name: restaurantName ?? '',
     },
   })
@@ -119,10 +120,10 @@ export default function ChatPage({ id }: { id: string | number }) {
   //  }, [pendingScan, setPendingScan])
 
   useEffect(() => {
-    if (id) {
-      selectRestaurant()
-    }
-  }, [id])
+    if (!id) return
+
+    selectRestaurant()
+  }, [id, selectRestaurant])
 
   return (
     <div className='flex h-full flex-col relative'>

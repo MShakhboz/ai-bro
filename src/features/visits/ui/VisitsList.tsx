@@ -44,6 +44,7 @@ export default function VisitsList() {
   const userName = me?.user.name ?? name?.name
 
   const [isScanning, setIsScanning] = useState(false)
+  const [startPolling, setStartPolling] = useState(false)
 
   const [dialogOpen, setDialogOpen] = useState(false)
   const [dialog, setDialog] = useState<{
@@ -72,10 +73,10 @@ export default function VisitsList() {
 
   const {
     data: sessionStatus,
-    isPending: isSessionStatusPending,
     isError: isSessionStatusError,
-    isFetching,
-  } = useSessionStatus(sessionId)
+    isLoading,
+    error: sessionStatusError,
+  } = useSessionStatus(sessionId, startPolling, () => setStartPolling(false))
 
   useEffect(() => {
     const el = loadMoreRef.current
@@ -134,8 +135,10 @@ export default function VisitsList() {
   const handleQrSuccess = async (value: string) => {
     try {
       await scanQr(value)
-      //  setPendingScan({ type: 'qr', value })
+      setStartPolling(true)
       setIsScanning(false)
+      //  setPendingScan({ type: 'qr', value })
+      // router.push(`/restaurants`)
     } catch {
       showDialog(
         'Ошибка сканирования',
@@ -147,8 +150,8 @@ export default function VisitsList() {
   const handlePhotoSuccess = async (photo: File, dataUrl: string) => {
     try {
       await submitPhotoScan(photo)
+      setStartPolling(true)
       setIsScanning(false)
-      //  setPendingScan({ type: 'image', preview: dataUrl })
     } catch (err) {
       const message =
         err instanceof Error
@@ -199,6 +202,14 @@ export default function VisitsList() {
         </p>
       </div>
     )
+  }
+
+  if (
+    isPending ||
+    isLoading ||
+    ['pending', 'processing'].includes(sessionStatus?.status ?? '')
+  ) {
+    return <RestaurantsLoading />
   }
 
   return (

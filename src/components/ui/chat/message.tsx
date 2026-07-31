@@ -134,7 +134,7 @@ export function DishCard({
             </p>
 
             <p className='truncate font-medium text-[#1C1409]'>
-              {item.name_ru} {item.name_ru}
+              {item.name_ru}
             </p>
 
             {(item.weight_volume || item.nutrition.calories) && (

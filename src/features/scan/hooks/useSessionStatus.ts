@@ -32,7 +32,7 @@ export function useSessionStatus(
       ) {
         // if (resId) {
         //   router.push(
-        //     `/restaurants/${resId}?restaurant_name=${encodeURIComponent(resName ?? '')}`,
+        //     `/visits/${resId}?restaurant_name=${encodeURIComponent(resName ?? '')}`,
         //   )
         // }
         if (resName) {
