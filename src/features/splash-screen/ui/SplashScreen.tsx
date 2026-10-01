@@ -92,7 +92,7 @@ export function SplashScreen() {
   return (
     <div className='relative flex h-full w-full flex-col items-center justify-center bg-[#1D140F] px-8 md:h-[860px] md:max-w-[430px] md:rounded-[36px] md:shadow-xl'>
       <div className='space-y-6 text-center'>
-        <h1 className='font-serif text-5xl text-white'>AI Bro</h1>
+        <h1 className='font-serif text-5xl text-white'>Hi Bro</h1>
 
         <p className='text-sm text-[#D6CFC8]'>Ваш персональный гид по меню</p>
 
