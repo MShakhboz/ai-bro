@@ -4,120 +4,134 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 
 import {
- Carousel,
- CarouselApi,
- CarouselContent,
- CarouselItem,
+  Carousel,
+  CarouselApi,
+  CarouselContent,
+  CarouselItem,
 } from '@/components/ui/carousel'
 
 import { Button } from '@/components/ui/button'
 import Image from 'next/image'
+import { Playfair_Display } from 'next/font/google'
+
+const playfair = Playfair_Display({
+  subsets: ['latin', 'cyrillic'],
+  weight: ['600'],
+})
 
 const slides = [
- {
-  image: '/smart-waiter-onboarding.svg',
-  title: 'Персональные\nрекомендации',
-  description:
-   'Получайте рекомендации блюд на основе ваших предпочтений, аллергий и диетических ограничений.',
- },
- {
-  image: '/scan-onboarding.svg',
-  title: 'Сканируйте\nменю',
-  description:
-   'Наведите камеру на меню, и AI мгновенно поможет выбрать лучшие блюда.',
- },
+  {
+    image: '/smart-waiter-onboarding.svg',
+    title: 'Умный официант прямо в телефоне',
+    description:
+      'Сканируйте QR-код на столе и получите персональные рекомендации от AI BRO',
+  },
+  {
+    image: '/scan-onboarding.svg',
+    title: 'Просто отсканируйте QR-код или сфотографируйте меню',
+    description:
+      'AI BRO знает всё меню ресторана и поможет с выбором, учитывая ваши предпочтения',
+  },
 ]
 
 export default function OnboardingPage() {
- const router = useRouter()
+  const router = useRouter()
 
- const [api, setApi] = useState<CarouselApi>()
- const [current, setCurrent] = useState(0)
+  const [api, setApi] = useState<CarouselApi>()
+  const [current, setCurrent] = useState(0)
 
- useEffect(() => {
-  if (!api) return
+  useEffect(() => {
+    if (!api) return
 
-  setCurrent(api.selectedScrollSnap())
+    setCurrent(api.selectedScrollSnap())
 
-  const onSelect = () => setCurrent(api.selectedScrollSnap())
-  api.on('select', onSelect)
+    const onSelect = () => setCurrent(api.selectedScrollSnap())
+    api.on('select', onSelect)
 
-  return () => {
-   api.off('select', onSelect)
+    return () => {
+      api.off('select', onSelect)
+    }
+  }, [api])
+
+  const handleNext = () => {
+    if (!api) return
+
+    if (current === slides.length - 1) {
+      router.push('/name')
+      return
+    }
+
+    api.scrollNext()
   }
- }, [api])
 
- const handleNext = () => {
-  if (!api) return
+  return (
+    <div className="flex h-full w-full flex-col overflow-y-auto bg-white px-6 pt-2 pb-[clamp(0.5rem,3dvh,1.5rem)]">
+      <div className="flex flex-1 flex-col justify-center">
+        <Carousel
+          setApi={setApi}
+          opts={{
+            align: 'start',
+            loop: false,
+          }}
+          className="w-full"
+        >
+          <CarouselContent>
+            {slides.map((slide) => (
+              <CarouselItem key={slide.title}>
+                <div className="flex flex-col items-center gap-[clamp(1rem,4dvh,2.5rem)]">
+                  <div className="flex size-[clamp(8rem,36dvh,17.5rem)] shrink-0 items-center justify-center rounded-full border border-[#E5DFD6] bg-white">
+                    <Image
+                      src={slide.image}
+                      height={96}
+                      width={96}
+                      alt={slide.title}
+                      className="size-[34%] object-contain"
+                    />
+                  </div>
 
-  if (current === slides.length - 1) {
-   router.push('/name')
-   return
-  }
+                  <div className="space-y-[clamp(0.375rem,1.5dvh,0.75rem)] px-4 text-center">
+                    <h2
+                      className={`${playfair.className} text-[clamp(1.125rem,3.4dvh,1.5rem)] leading-tight font-semibold text-balance text-[#1C1409]`}
+                    >
+                      {slide.title}
+                    </h2>
 
-  api.scrollNext()
- }
+                    <p className="text-sm text-balance text-[#7A6A52]">
+                      {slide.description}
+                    </p>
+                  </div>
+                </div>
+              </CarouselItem>
+            ))}
+          </CarouselContent>
+        </Carousel>
 
- return (
-  <div className='flex h-full w-full flex-col px-6 py-2'>
-   <Carousel
-    setApi={setApi}
-    opts={{
-     align: 'start',
-     loop: false,
-    }}
-    className='w-full flex-1 h-full'
-   >
-    <CarouselContent className='h-full flex-1'>
-     {slides.map((slide) => (
-      <CarouselItem key={slide.title} className='h-full'>
-       <div className='flex h-full flex-col justify-center items-center space-y-6'>
-        <div className='flex items-center justify-center w-70 h-70 rounded-full bg-[#F2EDE4]'>
-         <Image
-          src={slide.image}
-          height={120}
-          width={120}
-          alt={slide.title}
-          className='object-contain'
-         />
+        <div className="mt-[clamp(0.5rem,2dvh,1rem)] flex shrink-0 items-center justify-center gap-2">
+          {slides.map((_, index) => (
+            <div
+              key={index}
+              className={`h-2 w-2 rounded-full transition-colors ${
+                current === index ? 'bg-[#C87437]' : 'bg-[#D8D2CB]'
+              }`}
+            />
+          ))}
         </div>
+      </div>
 
-        <div className='space-y-3 text-center'>
-         <h2 className='text-2xl font-bold text-[#1C1409]'>{slide.title}</h2>
+      <Button
+        onClick={handleNext}
+        className="mt-[clamp(0.75rem,3dvh,1.5rem)] h-[clamp(2.75rem,7dvh,3.5rem)] shrink-0 rounded-2xl bg-[#C87437] text-base font-semibold hover:bg-[#B9642F]"
+      >
+        Далее
+      </Button>
 
-         <p className='text-sm  text-[#7A6A52]'>{slide.description}</p>
-        </div>
-       </div>
-      </CarouselItem>
-     ))}
-    </CarouselContent>
-   </Carousel>
-
-   <div className='mt-2 flex items-center justify-center gap-2'>
-    {slides.map((_, index) => (
-     <div
-      key={index}
-      className={`h-2 rounded-full transition-all ${
-       current === index ? 'w-8 bg-[#C87437]' : 'w-2 bg-[#D8D2CB]'
-      }`}
-     />
-    ))}
-   </div>
-
-   <Button
-    onClick={handleNext}
-    className='mt-2 h-14 rounded-2xl bg-[#C87437] text-sm hover:bg-[#B9642F]'
-   >
-    {current === slides.length - 1 ? 'Начать' : 'Далее'}
-   </Button>
-
-   <Button
-    onClick={() => router.push('/name')}
-    variant='link'
-    className='mt-2 h-14 rounded-2xl text-sm text-[#7A6A52]'
-   >
-    Пропустить
-   </Button>
-  </div>
- )
+      <Button
+        onClick={() => router.push('/name')}
+        variant="link"
+        className="mt-1 h-[clamp(2.5rem,7dvh,3.5rem)] shrink-0 rounded-2xl text-base font-semibold text-[#7A6A52] hover:no-underline"
+      >
+        Пропустить
+      </Button>
+    </div>
+  )
 }
