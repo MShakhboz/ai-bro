@@ -28,6 +28,12 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from '@/components/ui/drawer'
+import { Playfair_Display } from 'next/font/google'
+
+const playfair = Playfair_Display({
+  subsets: ['latin', 'cyrillic'],
+  weight: ['600'],
+})
 
 export default function ScanBox() {
   const { name, setPendingScan } = useAppStore()
@@ -157,48 +163,53 @@ export default function ScanBox() {
             onClose={() => setIsScanning(false)}
           />
         ) : (
-          <div className='flex h-full flex-col px-8 py-3'>
-            <div className='mt-5 text-center'>
-              <h1 className='text-2xl font-semibold leading-tight text-[#241C17]'>
+          <div className='flex h-full flex-col overflow-y-auto bg-white px-8 pt-3 pb-[clamp(0.75rem,4dvh,2rem)]'>
+            <div className='flex flex-1 flex-col items-center justify-center gap-[clamp(1rem,4dvh,2.5rem)]'>
+              <h1
+                className={`${playfair.className} text-center text-[clamp(1.25rem,3.6dvh,1.75rem)] leading-tight font-semibold text-[#1C1409]`}
+              >
                 {greeting},
                 <br />
                 {name?.name || 'Гость'}
               </h1>
-            </div>
 
-            <div className='mt-6 flex justify-center'>
               <div
-                className='flex h-55 w-55 items-center justify-center rounded-[34px]'
+                className='flex size-[clamp(8rem,30dvh,13.75rem)] shrink-0 items-center justify-center rounded-[34px] bg-[#FBF9F7]'
                 style={{
-                  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25'%3E%3Crect width='100%25' height='100%25' fill='none' rx='34' ry='34' stroke='%23C87437' stroke-width='2' stroke-dasharray='10%2C 8'/%3E%3C/svg%3E")`,
+                  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25'%3E%3Crect width='100%25' height='100%25' fill='none' rx='34' ry='34' stroke='%23C87437' stroke-width='3' stroke-dasharray='10%2C 8'/%3E%3C/svg%3E")`,
                 }}
               >
                 <Image
                   width={120}
                   height={120}
                   src='/smart-waiter-onboarding.svg'
-                  alt='Smart waiter'
+                  alt=''
+                  className='size-[30%]'
                 />
               </div>
-            </div>
 
-            <div className='mt-5 text-center'>
-              <h2 className='text-xl text-[#241C17]'>
-                Сканируйте QR-код или сфотографируйте меню
-              </h2>
-              <p className='mx-auto mt-4 max-w-65 text-sm text-[#847B73]'>
-                После открытия камеры вы сможете переключаться между QR-кодом и
-                фотографией меню.
-              </p>
+              <div className='text-center'>
+                <h2
+                  className={`${playfair.className} text-[clamp(1.125rem,2.8dvh,1.375rem)] font-semibold text-[#1C1409]`}
+                >
+                  Запустите сканирование
+                </h2>
+                <p className='mx-auto mt-[clamp(0.375rem,1.5dvh,0.75rem)] text-sm text-[#7A6A52]'>
+                  Наведите камеру на QR-код или меню на
+                  <br />
+                  вашем столике, чтобы пригласить
+                  <br />
+                  AI-официанта
+                </p>
+              </div>
             </div>
 
             <Button
               onClick={() => setIsScanning(true)}
-              disabled={false}
-              className='mt-auto h-14 rounded-full bg-[#C87437] text-base hover:bg-[#B96530]'
+              className='mt-[clamp(0.75rem,3dvh,1.5rem)] h-[clamp(2.75rem,7dvh,3.5rem)] shrink-0 rounded-2xl bg-[#C87437] text-base font-semibold hover:bg-[#B96530]'
             >
               <Camera className='mr-2 h-5 w-5' />
-              {false ? 'Обработка...' : 'Открыть камеру'}
+              Сканировать
             </Button>
           </div>
         )}
