@@ -59,7 +59,7 @@ export default function VisitsList() {
   const { location } = useGeolocation()
 
   const {
-    addPhoto: submitPhotoScan,
+    submitPhotos: submitPhotoScan,
     scanQr,
     finish,
     reset,
@@ -147,9 +147,9 @@ export default function VisitsList() {
     }
   }
 
-  const handlePhotoSuccess = async (photo: File, dataUrl: string) => {
+  const handlePhotosSuccess = async (photos: File[]) => {
     try {
-      await submitPhotoScan(photo)
+      await submitPhotoScan(photos)
       setStartPolling(true)
       setIsScanning(false)
     } catch (err) {
@@ -217,7 +217,7 @@ export default function VisitsList() {
       {isScanning ? (
         <CameraScanner
           onQrSuccess={handleQrSuccess}
-          onPhotoSuccess={handlePhotoSuccess}
+          onPhotosSuccess={handlePhotosSuccess}
           onError={(error) => showDialog('Ошибка камеры', error)}
           onClose={() => setIsScanning(false)}
         />

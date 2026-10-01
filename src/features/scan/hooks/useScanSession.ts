@@ -1,4 +1,4 @@
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { useCreatePhotoSession } from './useCreatePhotoSession'
 import { useUploadPhoto } from './useUploadPhoto'
@@ -26,6 +26,8 @@ export function useScanSession(sessionProps: CreatePhotoSession) {
     useCompleteSession()
   const { mutateAsync: scanQr, isPending: scanPending } = useScanQr()
 
+  const [submitting, setSubmitting] = useState(false)
+
   const sessionRef = useRef<{
     sessionId: string | null
     order: number
@@ -34,37 +36,42 @@ export function useScanSession(sessionProps: CreatePhotoSession) {
     order: order ?? 1,
   })
 
-  const addPhoto = async (file: File) => {
-    const validationError = validateMenuPhoto(file)
-
-    if (validationError) {
-      throw new Error(validationError)
+  // Uploads every page into a fresh session, then completes it once
+  const submitPhotos = async (files: File[]) => {
+    if (!files.length) {
+      throw new Error('No photos uploaded')
     }
 
-    let { sessionId, order } = sessionRef.current
+    for (const file of files) {
+      const validationError = validateMenuPhoto(file)
 
-    // if (!sessionId) {
-    const created = await createPhotoSession(sessionProps)
+      if (validationError) {
+        throw new Error(validationError)
+      }
+    }
 
-    sessionId = created.session_id
+    setSubmitting(true)
 
-    sessionRef.current.sessionId = sessionId
-    // }
+    try {
+      const { session_id: sessionId } = await createPhotoSession(sessionProps)
 
-    const result = await uploadPhoto({
-      sessionId,
-      file,
-      order,
-    })
+      sessionRef.current = { sessionId, order: 1 }
 
-    const nextOrder = order + 1
+      for (const [index, file] of files.entries()) {
+        await uploadPhoto({ sessionId, file, order: index + 1 })
+        sessionRef.current.order = index + 2
+      }
 
-    sessionRef.current.order = nextOrder
+      setSession(sessionId)
+      setImgOrder(files.length + 1)
 
-    setSession(sessionId)
-    setImgOrder(nextOrder)
-
-    return result
+      return await completeSession({
+        sessionId,
+        expectedCount: files.length,
+      })
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   const scanQrCode = async (value: string) => {
@@ -108,11 +115,12 @@ export function useScanSession(sessionProps: CreatePhotoSession) {
 
   return {
     sessionId: sessionRef.current.sessionId,
-    addPhoto,
+    submitPhotos,
     scanQr: scanQrCode,
     finish,
     reset,
     isPending:
+      submitting ||
       createSessionPending ||
       uploadingPending ||
       completePending ||

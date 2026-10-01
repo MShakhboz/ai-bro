@@ -1,13 +1,15 @@
 'use client'
 
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import QrScanner from 'qr-scanner'
 import Webcam from 'react-webcam'
 
 interface Props {
  onQrSuccess(value: string): void
- onPhotoSuccess(photo: File, dataUrl: string): void
+ onPhotoSuccess(photo: File): void
  onError(error: string): void
+ // QR results are ignored while this returns false (e.g. on the photo tab)
+ isQrActive?(): boolean
 }
 
 const MAX_FILE_SIZE = 2 * 1024 * 1024 // 2 MB
@@ -71,7 +73,12 @@ async function compressToJpeg(
  throw new Error('Не удалось сжать изображение до 2 МБ')
 }
 
-export function useCamera({ onQrSuccess, onPhotoSuccess, onError }: Props) {
+export function useCamera({
+ onQrSuccess,
+ onPhotoSuccess,
+ onError,
+ isQrActive,
+}: Props) {
  const webcamRef = useRef<Webcam>(null)
  const scannerRef = useRef<QrScanner | null>(null)
 
@@ -107,6 +114,8 @@ export function useCamera({ onQrSuccess, onPhotoSuccess, onError }: Props) {
    scannerRef.current = new QrScanner(
     video,
     (result) => {
+     if (isQrActive && !isQrActive()) return
+
      stopCamera()
      onQrSuccess(result.data)
     },
@@ -129,7 +138,14 @@ export function useCamera({ onQrSuccess, onPhotoSuccess, onError }: Props) {
    console.error('QR Scanner initialization failed:', e)
    onError('Unable to bind QR scanner.')
   }
- }, [onQrSuccess, onError])
+ }, [onQrSuccess, onError, isQrActive])
+
+ useEffect(() => {
+  return () => {
+   scannerRef.current?.destroy()
+   scannerRef.current = null
+  }
+ }, [])
 
  async function capturePhoto() {
   if (!webcamRef.current || !ready) return
@@ -153,13 +169,10 @@ export function useCamera({ onQrSuccess, onPhotoSuccess, onError }: Props) {
    console.log('Compressed:', file.size)
    console.log('Type:', file.type)
 
-   stopCamera()
-
-   onPhotoSuccess(file, dataUrl)
+   // camera stays on so the user can shoot more pages
+   onPhotoSuccess(file)
   } catch (err) {
    console.error('Photo capture operation failed:', err)
-
-   stopCamera()
 
    onError(err instanceof Error ? err.message : 'Failed to capture photo.')
   } finally {

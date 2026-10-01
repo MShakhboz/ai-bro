@@ -1,37 +1,80 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
+import { v4 as uuidv4 } from 'uuid'
 import Webcam from 'react-webcam'
 import { Button } from '@/components/ui/button'
-import { X, Camera, Image as ImageIcon, Loader2 } from 'lucide-react'
+import { X, Plus, Loader2 } from 'lucide-react'
 import { useCamera } from '@/shared/hooks/useCamera'
 import { compressToJpeg } from '@/shared/lib/compress-to-jpeg'
 
 type Mode = 'qr' | 'menu'
 
+type MenuPhoto = {
+ id: string
+ file: File
+ preview: string
+}
+
 interface Props {
  onQrSuccess(value: string): void
- onPhotoSuccess(photo: File, dataUrl: string): void
+ onPhotosSuccess(photos: File[]): void | Promise<void>
  onError(error: string): void
  onClose(): void
 }
 
+function toMenuPhoto(file: File): MenuPhoto {
+ return {
+  id: uuidv4(),
+  file,
+  preview: URL.createObjectURL(file),
+ }
+}
+
 export default function CameraScanner({
  onQrSuccess,
- onPhotoSuccess,
+ onPhotosSuccess,
  onError,
  onClose,
 }: Props) {
  const [mode, setMode] = useState<Mode>('qr')
+ const [photos, setPhotos] = useState<MenuPhoto[]>([])
+ const [galleryLoading, setGalleryLoading] = useState(false)
+ const [submitting, setSubmitting] = useState(false)
 
  const fileInputRef = useRef<HTMLInputElement>(null)
 
  // Keeps mutable track of what tab the user is seeing in real-time
  const activeModeRef = useRef<Mode>('qr')
+ const isQrActive = useCallback(() => activeModeRef.current === 'qr', [])
 
  useEffect(() => {
   activeModeRef.current = mode
  }, [mode])
+
+ // Release preview URLs when the scanner closes
+ const photosRef = useRef(photos)
+ useEffect(() => {
+  photosRef.current = photos
+ }, [photos])
+ useEffect(() => {
+  return () => {
+   photosRef.current.forEach((photo) => URL.revokeObjectURL(photo.preview))
+  }
+ }, [])
+
+ const addPhotos = (files: File[]) => {
+  setPhotos((prev) => [...prev, ...files.map(toMenuPhoto)])
+ }
+
+ const removePhoto = (id: string) => {
+  setPhotos((prev) => {
+   const removed = prev.find((photo) => photo.id === id)
+   if (removed) URL.revokeObjectURL(removed.preview)
+
+   return prev.filter((photo) => photo.id !== id)
+  })
+ }
 
  const {
   webcamRef,
@@ -41,41 +84,37 @@ export default function CameraScanner({
   stopCamera,
   handleVideoLoad,
  } = useCamera({
-  onQrSuccess: (value) => {
-   if (activeModeRef.current === 'qr') {
-    onQrSuccess(value)
-   }
-  },
-  onPhotoSuccess,
+  onQrSuccess,
+  onPhotoSuccess: (file) => addPhotos([file]),
   onError,
+  isQrActive,
  })
-
- const handleGalleryClick = () => {
-  fileInputRef.current?.click()
- }
 
  const handleGalleryChange = async (
   event: React.ChangeEvent<HTMLInputElement>,
  ) => {
-  const file = event.target.files?.[0]
+  const files = Array.from(event.target.files ?? [])
 
   // Reset so the same image can be selected again
   event.target.value = ''
 
-  if (!file) return
+  if (!files.length) return
 
-  if (!file.type.startsWith('image/')) {
+  if (files.some((file) => !file.type.startsWith('image/'))) {
    onError('Выберите изображение.')
    return
   }
 
+  setGalleryLoading(true)
+
   try {
-   const compressedFile = await compressToJpeg(file)
+   const compressed: File[] = []
 
-   const previewUrl = URL.createObjectURL(compressedFile)
+   for (const file of files) {
+    compressed.push(await compressToJpeg(file))
+   }
 
-   stopCamera()
-   onPhotoSuccess(compressedFile, previewUrl)
+   addPhotos(compressed)
   } catch (error) {
    console.error('Gallery image compression failed:', error)
    onError(
@@ -83,8 +122,22 @@ export default function CameraScanner({
      ? error.message
      : 'Не удалось обработать изображение.',
    )
+  } finally {
+   setGalleryLoading(false)
   }
  }
+
+ const handleSubmit = async () => {
+  setSubmitting(true)
+
+  try {
+   await onPhotosSuccess(photos.map((photo) => photo.file))
+  } finally {
+   setSubmitting(false)
+  }
+ }
+
+ const showReview = photos.length > 0
 
  return (
   <div className='relative h-full w-full overflow-hidden bg-black'>
@@ -120,6 +173,7 @@ export default function CameraScanner({
     ref={fileInputRef}
     type='file'
     accept='image/*'
+    multiple
     className='hidden'
     onChange={handleGalleryChange}
    />
@@ -181,38 +235,98 @@ export default function CameraScanner({
     )}
    </div>
 
-   <div className='absolute bottom-26 left-0 right-0 text-center text-white'>
-    {mode === 'qr'
-     ? 'Наведите камеру на QR-код на столе'
-     : 'Сфотографируйте страницу меню'}
-   </div>
+   {mode === 'qr' && (
+    <div className='absolute bottom-26 left-0 right-0 text-center text-white'>
+     Наведите камеру на QR-код на столе
+    </div>
+   )}
 
    {mode === 'menu' && (
-    <div className='absolute bottom-5 left-1/2 z-50 flex -translate-x-1/2 items-center gap-5'>
-     {/* Gallery */}
-     <Button
-      type='button'
-      size='icon'
-      variant='secondary'
-      disabled={loading}
-      onClick={handleGalleryClick}
-      className='h-12 w-12 rounded-full'
-     >
-      <ImageIcon />
-     </Button>
+    <div className='absolute inset-x-0 bottom-0 z-50 bg-[#1D140F]/75 px-4 pt-4 pb-5 backdrop-blur-sm'>
+     {showReview ? (
+      <>
+       {/* Taken pages */}
+       <div className='flex gap-3 overflow-x-auto pt-2 pr-2'>
+        <button
+         type='button'
+         aria-label='Добавить из галереи'
+         disabled={galleryLoading || submitting}
+         onClick={() => fileInputRef.current?.click()}
+         className='flex size-14 shrink-0 items-center justify-center rounded-lg border border-dashed border-white/70 text-white disabled:opacity-50'
+        >
+         {galleryLoading ? (
+          <Loader2 className='size-5 animate-spin' />
+         ) : (
+          <Plus className='size-5' />
+         )}
+        </button>
 
-     {/* Camera */}
-     <Button
-      type='button'
-      disabled={!ready || loading}
-      onClick={capturePhoto}
-      className='h-20 w-20 rounded-full border-[6px] border-white bg-white text-black hover:bg-white'
-     >
-      {loading ? <Loader2 className='animate-spin' /> : <Camera />}
-     </Button>
+        {photos.map((photo, index) => (
+         <div key={photo.id} className='relative size-14 shrink-0'>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+           src={photo.preview}
+           alt={`Страница ${index + 1}`}
+           className='size-full rounded-lg object-cover'
+          />
 
-     {/* Keeps camera button centered */}
-     <div className='h-12 w-12' />
+          <button
+           type='button'
+           aria-label={`Удалить страницу ${index + 1}`}
+           disabled={submitting}
+           onClick={() => removePhoto(photo.id)}
+           className='absolute -top-2 -right-2 flex size-6 items-center justify-center rounded-full bg-white text-[#C87437] shadow'
+          >
+           <X className='size-3.5' />
+          </button>
+         </div>
+        ))}
+       </div>
+
+       <div className='mt-4 flex gap-3'>
+        <Button
+         type='button'
+         disabled={!ready || loading || submitting}
+         onClick={capturePhoto}
+         className='h-11 flex-1 rounded-xl bg-white text-sm font-semibold text-[#7A6A52] hover:bg-white/90'
+        >
+         {loading && <Loader2 className='mr-2 size-4 animate-spin' />}
+         Еще страница
+        </Button>
+
+        <Button
+         type='button'
+         disabled={submitting}
+         onClick={handleSubmit}
+         className='h-11 flex-1 rounded-xl bg-[#C87437] text-sm font-semibold text-white hover:bg-[#B96530]'
+        >
+         {submitting && <Loader2 className='mr-2 size-4 animate-spin' />}
+         Распознать меню
+        </Button>
+       </div>
+      </>
+     ) : (
+      <div className='flex flex-col items-center gap-4'>
+       <p className='text-center text-sm text-white'>
+        Сфотографируйте страницу меню
+       </p>
+
+       <div className='relative flex w-full items-center justify-center'>
+        {/* Shutter */}
+        <button
+         type='button'
+         aria-label='Сфотографировать'
+         disabled={!ready || loading}
+         onClick={capturePhoto}
+         className='flex size-18 items-center justify-center rounded-full border-[3px] border-white/60 p-1 disabled:opacity-60'
+        >
+         <span className='flex size-full items-center justify-center rounded-full bg-white text-black'>
+          {loading && <Loader2 className='size-6 animate-spin' />}
+         </span>
+        </button>
+       </div>
+      </div>
+     )}
     </div>
    )}
   </div>

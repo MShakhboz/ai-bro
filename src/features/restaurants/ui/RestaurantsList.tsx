@@ -86,7 +86,7 @@ export default function RestaurantsList() {
   const { location } = useGeolocation()
 
   const {
-    addPhoto: submitPhotoScan,
+    submitPhotos: submitPhotoScan,
     scanQr,
     finish,
     reset,
@@ -131,9 +131,9 @@ export default function RestaurantsList() {
     }
   }
 
-  const handlePhotoSuccess = async (photo: File, dataUrl: string) => {
+  const handlePhotosSuccess = async (photos: File[]) => {
     try {
-      await submitPhotoScan(photo)
+      await submitPhotoScan(photos)
       setIsScanning(false)
       //  setPendingScan({ type: 'image', preview: dataUrl })
     } catch (err) {
@@ -191,7 +191,7 @@ export default function RestaurantsList() {
       {isScanning ? (
         <CameraScanner
           onQrSuccess={handleQrSuccess}
-          onPhotoSuccess={handlePhotoSuccess}
+          onPhotosSuccess={handlePhotosSuccess}
           onError={(error) => showDialog('Ошибка камеры', error)}
           onClose={() => setIsScanning(false)}
         />

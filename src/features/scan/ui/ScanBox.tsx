@@ -55,7 +55,7 @@ export default function ScanBox() {
   const { location } = useGeolocation()
 
   const {
-    addPhoto: submitPhotoScan,
+    submitPhotos: submitPhotoScan,
     scanQr,
     finish,
     reset,
@@ -106,9 +106,9 @@ export default function ScanBox() {
     }
   }
 
-  const handlePhotoSuccess = async (photo: File, dataUrl: string) => {
+  const handlePhotosSuccess = async (photos: File[]) => {
     try {
-      await submitPhotoScan(photo)
+      await submitPhotoScan(photos)
       setStartPolling(true)
       setIsScanning(false)
     } catch (err) {
@@ -116,7 +116,9 @@ export default function ScanBox() {
         err instanceof Error
           ? err.message
           : 'Не удалось обработать фото меню. Попробуйте снова.'
-      showDialog('Ошибка загрузки', message)
+      // keep the scanner open so the taken pages are not lost
+      setDialog({ title: 'Ошибка загрузки', description: message })
+      setDialogOpen(true)
     }
   }
 
@@ -144,21 +146,23 @@ export default function ScanBox() {
     }
   }, [sessionStatus?.candidates])
 
-  if (
+  const busy =
     isPending ||
     isLoading ||
     ['pending', 'processing'].includes(sessionStatus?.status ?? '')
-  ) {
-    return <RestaurantsLoading />
-  }
 
   return (
     <>
       <div className='relative h-full w-full bg-[#F6F3EE]'>
+        {busy && (
+          <div className='absolute inset-0 z-60'>
+            <RestaurantsLoading />
+          </div>
+        )}
         {isScanning ? (
           <CameraScanner
             onQrSuccess={handleQrSuccess}
-            onPhotoSuccess={handlePhotoSuccess}
+            onPhotosSuccess={handlePhotosSuccess}
             onError={(error) => showDialog('Ошибка камеры', error)}
             onClose={() => setIsScanning(false)}
           />

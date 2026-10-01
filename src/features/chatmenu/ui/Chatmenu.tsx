@@ -93,7 +93,7 @@ export default function ChatPage({ id }: { id: string | number }) {
     sendMessage(value)
   }
 
-  async function handlePhotoSuccess(photo: File, dataUrl: string) {
+  async function handlePhotosSuccess(photos: File[]) {
     setIsScanning(false)
     // TODO: photo-in-chat likely needs its own endpoint/param — the two chat
     // endpoints we have (GET/POST /visits/{id}/chat/messages) only show
@@ -131,7 +131,7 @@ export default function ChatPage({ id }: { id: string | number }) {
         <div className='absolute inset-0 z-50 flex items-center justify-center bg-black/50'>
           <CameraScanner
             onQrSuccess={handleQrSuccess}
-            onPhotoSuccess={handlePhotoSuccess}
+            onPhotosSuccess={handlePhotosSuccess}
             onError={handleCameraError}
             onClose={() => setIsScanning(false)}
           />
