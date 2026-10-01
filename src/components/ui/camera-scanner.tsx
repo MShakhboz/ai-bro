@@ -21,6 +21,7 @@ interface Props {
  onPhotosSuccess(photos: File[]): void | Promise<void>
  onError(error: string): void
  onClose(): void
+ initialMode?: Mode
 }
 
 function toMenuPhoto(file: File): MenuPhoto {
@@ -36,8 +37,9 @@ export default function CameraScanner({
  onPhotosSuccess,
  onError,
  onClose,
+ initialMode = 'qr',
 }: Props) {
- const [mode, setMode] = useState<Mode>('qr')
+ const [mode, setMode] = useState<Mode>(initialMode)
  const [photos, setPhotos] = useState<MenuPhoto[]>([])
  const [galleryLoading, setGalleryLoading] = useState(false)
  const [submitting, setSubmitting] = useState(false)
@@ -45,7 +47,7 @@ export default function CameraScanner({
  const fileInputRef = useRef<HTMLInputElement>(null)
 
  // Keeps mutable track of what tab the user is seeing in real-time
- const activeModeRef = useRef<Mode>('qr')
+ const activeModeRef = useRef<Mode>(initialMode)
  const isQrActive = useCallback(() => activeModeRef.current === 'qr', [])
 
  useEffect(() => {

@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { Camera } from 'lucide-react'
+import { Camera, ImageOff, QrCode } from 'lucide-react'
 
 import CameraScanner from '@/components/ui/camera-scanner'
 import { useRouter } from 'next/navigation'
@@ -22,6 +22,7 @@ import { useGeolocation } from '@/shared/hooks/useGeolocation'
 import Image from 'next/image'
 import RestaurantsLoading from '@/features/restaurants/ui/RestaurantsLoading'
 import { useSessionStatus } from '../hooks/useSessionStatus'
+import ScanFailed from './ScanFailed'
 import {
   Drawer,
   DrawerContent,
@@ -41,6 +42,9 @@ export default function ScanBox() {
   const [isScanning, setIsScanning] = useState(false)
   const [startPolling, setStartPolling] = useState(false)
   const [open, setOpen] = useState(false)
+  // what the last submitted scan was, to pick the right failure screen
+  const [scanSource, setScanSource] = useState<'qr' | 'menu' | null>(null)
+  const [scannerMode, setScannerMode] = useState<'qr' | 'menu'>('qr')
 
   const [dialogOpen, setDialogOpen] = useState(false)
   const [dialog, setDialog] = useState<{
@@ -94,6 +98,7 @@ export default function ScanBox() {
   const handleQrSuccess = async (value: string) => {
     try {
       await scanQr(value)
+      setScanSource('qr')
       setStartPolling(true)
       setIsScanning(false)
       //  setPendingScan({ type: 'qr', value })
@@ -109,6 +114,7 @@ export default function ScanBox() {
   const handlePhotosSuccess = async (photos: File[]) => {
     try {
       await submitPhotoScan(photos)
+      setScanSource('menu')
       setStartPolling(true)
       setIsScanning(false)
     } catch (err) {
@@ -146,6 +152,21 @@ export default function ScanBox() {
     }
   }, [sessionStatus?.candidates])
 
+  // the scan is treated as failed when extraction failed, or when it ended
+  // without any restaurant to continue with (no candidates, no guessed name)
+  const noRestaurant =
+    sessionStatus?.status === 'awaiting_restaurant' &&
+    !sessionStatus.candidates?.length &&
+    !sessionStatus.guessed_restaurant_name
+  const scanFailed =
+    scanSource !== null && (sessionStatus?.status === 'failed' || noRestaurant)
+
+  const openScanner = (mode: 'qr' | 'menu') => {
+    setScanSource(null)
+    setScannerMode(mode)
+    setIsScanning(true)
+  }
+
   const busy =
     isPending ||
     isLoading ||
@@ -165,6 +186,27 @@ export default function ScanBox() {
             onPhotosSuccess={handlePhotosSuccess}
             onError={(error) => showDialog('Ошибка камеры', error)}
             onClose={() => setIsScanning(false)}
+            initialMode={scannerMode}
+          />
+        ) : scanFailed && scanSource === 'qr' ? (
+          <ScanFailed
+            icon={<QrCode />}
+            title='Не удалось распознать QR-код'
+            description='Попробуйте навести камеру ещё раз или сфотографируйте меню'
+            primaryLabel='Попробовать снова'
+            onPrimary={() => openScanner('qr')}
+            secondaryLabel='Фото меню'
+            onSecondary={() => openScanner('menu')}
+          />
+        ) : scanFailed ? (
+          <ScanFailed
+            icon={<ImageOff />}
+            title='Не удалось распознать меню'
+            description='Попробуйте еще раз.'
+            primaryLabel='Попробовать снова'
+            onPrimary={() => openScanner('menu')}
+            secondaryLabel='QR-код'
+            onSecondary={() => openScanner('qr')}
           />
         ) : (
           <div className='flex h-full flex-col overflow-y-auto bg-white px-8 pt-3 pb-[clamp(0.75rem,4dvh,2rem)]'>
@@ -209,7 +251,7 @@ export default function ScanBox() {
             </div>
 
             <Button
-              onClick={() => setIsScanning(true)}
+              onClick={() => openScanner('qr')}
               className='mt-[clamp(0.75rem,3dvh,1.5rem)] h-[clamp(2.75rem,7dvh,3.5rem)] shrink-0 rounded-2xl bg-[#C87437] text-base font-semibold hover:bg-[#B96530]'
             >
               <Camera className='mr-2 h-5 w-5' />
