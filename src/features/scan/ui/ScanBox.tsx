@@ -37,7 +37,7 @@ const playfair = Playfair_Display({
 })
 
 export default function ScanBox() {
-  const { name, setPendingScan } = useAppStore()
+  const { name, me, setPendingScan } = useAppStore()
   const router = useRouter()
   const [isScanning, setIsScanning] = useState(false)
   const [startPolling, setStartPolling] = useState(false)
@@ -216,7 +216,7 @@ export default function ScanBox() {
               >
                 {greeting},
                 <br />
-                {name?.name || 'Гость'}
+                {name?.name || me?.user?.name || 'Гость'}
               </h1>
 
               <div

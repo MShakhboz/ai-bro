@@ -6,16 +6,20 @@ import { v4 as uuidv4 } from 'uuid'
 
 import { Progress } from '@/components/ui/progress'
 import { useSession } from '../hooks/useSession'
-import type { LoginResponse } from '@/types/AuthType'
+import type { SessionResponse } from '../types/session.type'
 import { useAppStore } from '@/store/use-app-store'
 import { useDeviceType } from '@/shared/hooks/useDeviceType'
 
 const SPLASH_DURATION = 2500
 
-function resolveNextRoute(data: LoginResponse): string {
-  if (!data.has_name) return '/name'
-  if (!data.has_visit_history) return '/onboarding'
+function resolveNextRoute(session: SessionResponse): string {
+  // new user: onboarding leads on to the name step
+  if (!session.has_name) return '/onboarding'
+  if (session.has_visit_history || session.recent_visits?.length > 0) {
+    return '/visits'
+  }
 
+  // known user without visits: straight to the greeting
   return '/scan'
 }
 
@@ -28,7 +32,7 @@ export function SplashScreen() {
   const platform = useDeviceType()
   const [deviceId] = useState(() => uuidv4())
 
-  const { mutate: setSession, data, isSuccess, isError } = useSession()
+  const { mutate: setSession, data, isError } = useSession()
   const { me } = useAppStore()
 
   const initialized = useRef(false)
@@ -78,16 +82,13 @@ export function SplashScreen() {
   useEffect(() => {
     if (!minDurationDone) return
 
-    if (me?.token) {
-      if (me?.recent_visits?.length > 0) {
-        router.replace('/visits')
-        return
-      } else {
-        router.replace('/onboarding')
-        return
-      }
-    }
-  }, [minDurationDone, router, me])
+    // route on the fresh bootstrap response; the persisted session is only
+    // a fallback when the request fails
+    const session = data ?? (isError && me?.token ? me : null)
+    if (!session) return
+
+    router.replace(resolveNextRoute(session))
+  }, [minDurationDone, router, me, data, isError])
 
   return (
     <div className='relative flex h-full w-full flex-col items-center justify-center bg-[#1D140F] px-8 md:h-[860px] md:max-w-[430px] md:rounded-[36px] md:shadow-xl'>
