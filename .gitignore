@@ -40,4 +40,8 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 .idea/
+
+# agent instructions
+/AGENTS.md
+/CLAUDE.md
 !.env*.example
